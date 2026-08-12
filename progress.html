@@ -1,0 +1,118 @@
+<title>Qwen3.6-27B Metal — Run Progress</title>
+<style>
+  :root {
+    --bg:#fbfaf8; --fg:#1c1b19; --muted:#6b6862; --line:#e2ddd4; --card:#ffffff;
+    --keep:#1a7f4b; --reject:#b3261e; --noise:#8a6d1f; --pend:#4a5b8c; --accent:#7a4f9c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#16151a; --fg:#eceaf0; --muted:#9a95a5; --line:#302d38; --card:#1e1d24;
+      --keep:#5fd39a; --reject:#ff8a80; --noise:#e0c068; --pend:#96a9e6; --accent:#c39ce8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#16151a; --fg:#eceaf0; --muted:#9a95a5; --line:#302d38; --card:#1e1d24;
+    --keep:#5fd39a; --reject:#ff8a80; --noise:#e0c068; --pend:#96a9e6; --accent:#c39ce8;
+  }
+  body { background:var(--bg); color:var(--fg); margin:0; padding:2rem 1.25rem 5rem;
+         font:15px/1.6 ui-sans-serif,-apple-system,"SF Pro Text",system-ui,sans-serif; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h1 { font-size:1.5rem; margin:0 0 .25rem; letter-spacing:-.02em; }
+  .sub { color:var(--muted); margin:0 0 2rem; font-size:.9rem; }
+  h2 { font-size:1.05rem; margin:2.4rem 0 .8rem; letter-spacing:-.01em;
+       padding-bottom:.4rem; border-bottom:1px solid var(--line); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:.75rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:.85rem 1rem; }
+  .card .k { color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; }
+  .card .v { font-size:1.45rem; font-variant-numeric:tabular-nums; margin-top:.15rem; letter-spacing:-.02em; }
+  .card .n { color:var(--muted); font-size:.78rem; margin-top:.1rem; }
+  .bar { height:9px; border-radius:5px; background:var(--line); overflow:hidden; margin-top:.55rem; }
+  .bar > i { display:block; height:100%; background:var(--accent); }
+  table { border-collapse:collapse; width:100%; font-size:.85rem; }
+  th,td { text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; }
+  code,.mono { font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:.85em; }
+  .tag { display:inline-block; padding:.1rem .45rem; border-radius:5px; font-size:.7rem;
+         font-weight:600; letter-spacing:.03em; }
+  .t-keep{color:var(--keep);border:1px solid var(--keep)} .t-rej{color:var(--reject);border:1px solid var(--reject)}
+  .t-noise{color:var(--noise);border:1px solid var(--noise)} .t-pend{color:var(--pend);border:1px solid var(--pend)}
+  .scroll { overflow-x:auto; }
+  ul { padding-left:1.1rem; } li { margin:.3rem 0; }
+  .blocked { border-left:3px solid var(--noise); padding:.7rem 1rem; background:var(--card);
+             border-radius:0 8px 8px 0; margin:.8rem 0; }
+</style>
+<div class="wrap">
+
+<h1>Qwen3.6-27B-Q4_K_M · Metal decode optimisation</h1>
+<p class="sub">Apple M5 Pro, 16 GPU cores, 24 GiB · trunk <code>0b1bad14f</code> · updated 2026-08-12 08:10Z</p>
+
+<h2>Where we are against physics</h2>
+<div class="grid">
+  <div class="card"><div class="k">baseline decode</div><div class="v">14.567</div><div class="n">tok/s ± 0.404 (n=10)</div></div>
+  <div class="card"><div class="k">ceiling · 1 tok/pass</div><div class="v">16.40</div><div class="n">270.8 GB/s ÷ 16.52 GB</div></div>
+  <div class="card"><div class="k">fraction of ceiling</div><div class="v">88.8%</div>
+    <div class="bar"><i style="width:88.8%"></i></div></div>
+  <div class="card"><div class="k">prefill</div><div class="v">306.8</div><div class="n">tok/s ± 6.09, compute-bound</div></div>
+  <div class="card"><div class="k">min detectable effect</div><div class="v">3.0%</div><div class="n">KEEP threshold</div></div>
+  <div class="card"><div class="k">attained bandwidth</div><div class="v">270.8</div><div class="n">GB/s — 88.2% of peak</div></div>
+</div>
+
+<p><strong>Plain decode is closed.</strong> No kernel takes 16.40 past 16.40. The only two ways
+forward are accepting more tokens per forward pass, and reading fewer bytes per token.</p>
+
+<div class="blocked">
+  <strong>Blocked on AC power.</strong> The machine went to battery at 07:53Z.
+  Apple Silicon drops GPU clocks on battery, so <em>timing</em> is not comparable to the frozen
+  baseline and <code>bench/env.sh</code> correctly refuses. Correctness work is clock-independent
+  and continues: greedy references, perplexity, KL-divergence, acceptance rate at temperature 0,
+  <code>test-backend-ops</code>, and gated-pipeline counts.
+  <br><br>Plug the laptop in and the measurement queue drains on its own.
+</div>
+
+<h2>Setup gates</h2>
+<div class="scroll"><table>
+<tr><th>#</th><th>Gate</th><th>State</th></tr>
+<tr><td>1</td><td>init.sh builds clean, decode.sh produces a number</td><td><span class="tag t-keep">PASS</span> 42 gated runs</td></tr>
+<tr><td>2</td><td>null test reports no difference</td><td><span class="tag t-keep">PASS</span> +0.542%, CI [−0.10,+1.19]</td></tr>
+<tr><td>3</td><td>positive control detects ~4%; sabotage reverted</td><td><span class="tag t-keep">DETECTED</span> p=0.0078 · revert proven clean; confirming run needs AC</td></tr>
+<tr><td>4</td><td>quality.sh passes on trunk, fails on degraded</td><td><span class="tag t-pend">IN FLIGHT</span> references regenerating at ctx 4096</td></tr>
+<tr><td>5</td><td>spec.sh reports nonzero acceptance</td><td><span class="tag t-pend">QUEUED</span> rates valid on battery</td></tr>
+<tr><td>6</td><td>NOISE.md states an MDE</td><td><span class="tag t-keep">PASS</span> 3.0%</td></tr>
+<tr><td>7</td><td>LEADS.md ≥10 ranked entries</td><td><span class="tag t-keep">PASS</span> 16</td></tr>
+<tr><td>8</td><td>GOAL.md numbers filled</td><td><span class="tag t-keep">PASS</span></td></tr>
+<tr><td>9</td><td>swap-clean run + memory budget</td><td><span class="tag t-keep">PASS</span></td></tr>
+<tr><td>10</td><td>no bulk in the source tree</td><td><span class="tag t-keep">PASS</span> ~350 KB</td></tr>
+</table></div>
+
+<h2>Candidates</h2>
+<div class="scroll"><table>
+<tr><th>#</th><th>Change</th><th>Class</th><th>Predicted</th><th>Verdict</th></tr>
+<tr><td>001</td><td><code>bench/lock.sh</code> — exclusive measurement lock</td><td>infra</td><td>—</td><td><span class="tag t-pend">INFRA</span></td></tr>
+<tr><td>002</td><td><code>test-backend-ops</code>: K-quant row gates, partial tiles, large k</td><td>test</td><td>—</td><td><span class="tag t-pend">PENDING</span></td></tr>
+<tr><td>003</td><td><code>dequantize_q4_K</code> scale division in float not half</td><td>B</td><td>PPL falls; speed 0</td><td><span class="tag t-pend">PENDING</span></td></tr>
+<tr><td>004</td><td>K-quants use <code>mul_mv_ext</code> at ne11 2–3</td><td>B</td><td>large at depth 1–2; <strong>0 at depth 0</strong></td><td><span class="tag t-pend">PENDING</span></td></tr>
+</table></div>
+<p class="sub">Only critic numbers enter the ledger. A builder reporting its own tok/s is producing fiction.</p>
+
+<h2>Two things measured here, not inherited</h2>
+<ul>
+<li><strong>The Q4_K half-precision scale division is worse than reported.</strong> Over 14,919,680
+super-blocks of this model, median <code>d</code> = 6.187e-05, so <code>d/16</code> = 3.87e-06 is
+subnormal in half for <strong>99.9998%</strong> of blocks — median relative error 3.66e-03
+(~8 mantissa bits), p99 9.6e-03, and some blocks flush to zero outright.</li>
+<li><strong>The verify-cost staircase.</strong> K-quant weight streams per verify step, verified
+against the pinned source: depth 1 → 2 streams, depth 2 → <strong>3</strong>, depths 3 and 4 →
+<strong>1</strong>, depths 5–7 → 2, depth 8+ → 1. Choosing the depth is free and worth up to 2–3×.</li>
+</ul>
+
+<h2>Next, in order</h2>
+<ol>
+<li>Drain the correctness gates (4, 5) — running.</li>
+<li>On AC: C1 A/B on one binary via <code>GGML_METAL_NO_KQUANT_EXT2</code>; re-derive the depth
+staircase; ngram drafting for copy-heavy categories (LEADS L2, the largest number in the dossier).</li>
+<li>Derive the floating-point noise scale before the first Class B verdict.</li>
+<li>S0 multi-column K-quant mat-vec, derived for 16 cores — <code>ne01 ≥ 2048</code> here, not
+Shrey's 4096, because that threshold is threadgroups-per-core and this part has half the cores.</li>
+</ol>
+
+</div>
