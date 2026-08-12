@@ -46,6 +46,17 @@ model-wide would mean T_ver(8) ~87 ms and ~28.7 tok/s at today's acceptance.
 Untried inside the kernel: NFRAG=2 (16 rows/simdgroup, halves B-load traffic;
 +3.5% on the narrow shape in the probe), and half-precision A/B fragments.
 
+**FR-SPEC EXISTS ALREADY (LEDGER 056).** shrey's `J-frspec` on branch
+`shrey/shipped` (commit d8e374596) is the draft-vocabulary trim this effort
+identified and deferred. Cherry-picked cleanly onto `frspec-test`; it fires,
+but N=32768 costs ~135 MB of contiguous copy and drove 39614 swap pages here,
+and a wikitext-built ranking dropped acc/fwd 3.796 -> 2.852 because it has no
+code/JSON coverage. **Next: a ranking from a representative corpus (NOT the
+timed prompts -- that is overfitting) and a smaller N, then re-measure.**
+Ranking file so far: `runs/frspec/rank-wikitrain.txt` (full 248320-id
+permutation, frequency-ranked prefix). Still unread from his stack: B-nr1,
+E-gdnfusion, N_R0_Q5_K_R1=2.
+
 **The 9.2 ms draft step is the other lever.** It splits into
 ~4.3 ms for the 1 GB output head (at width 1 it is already at the 230 GB/s the
 hardware gives, so only reading fewer bytes helps -- a draft-only vocabulary
