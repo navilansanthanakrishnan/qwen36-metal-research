@@ -3,13 +3,13 @@
 Working state for picking this up in a fresh context window. Overwrite freely —
 unlike LEDGER.md, this file is scratch.
 
-## STATUS 2026-08-12 (later): 19.728 tok/s ALL at depth 4, target 35 — NOT reached
+## STATUS 2026-08-12 (later): 21.41 tok/s at depth 4, target 35 — NOT reached
 
 The register-resident Q4_K simdgroup kernel is **built, correct, integrated and
 kept**: llama.cpp branch `sgmv-q4k`, +12.05% under the frozen speculative A/B
 (p=0.0312, CI [+9.87,+14.23], acceptance unchanged). See LEDGER 038-041.
 
-Run it as: `LLAMA_ARG_SPEC_N_RS_SEQ=1`, MTP depth 4, ctx 4096.
+Run it as: `LLAMA_ARG_SPEC_N_RS_SEQ=3` (swept, LEDGER 042), MTP depth 4, ctx 4096.
 `GGML_METAL_SGMV_DISABLE=1` selects the old path for A/B on one binary.
 
 **The cost model is now solved, and it says what has to happen next.**
