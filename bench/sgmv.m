@@ -146,12 +146,10 @@ int main(int argc, char **argv) {
             A8[((size_t)(row/8)*nb + ib)*8 + (row%8)] = A[(size_t)row*nb + ib];
 
     variant vs[] = {
-        {"v11 SY-epilogue NF=1",  "mv_sg11", 1, 4, 0},
-        {"v13 fma-min    NF=1",   "mv_sg13", 1, 4, 0},
-        {"v13 fma-min    NF=1 S2","mv_sg13", 1, 2, 0},
-        {"v13 fma-min    NF=2",   "mv_sg13", 2, 4, 0},
-        {"v13 fma-min    NF=4",   "mv_sg13", 4, 4, 0},
-        {"bwonly",                "mv_bwonly",1, 4, 0},
+        {"v13 float NF=1", "mv_sg13", 1, 4, 0},
+        {"v14 half  NF=1", "mv_sg14", 1, 4, 0},
+        {"v13 float NF=2", "mv_sg13", 2, 4, 0},
+        {"v14 half  NF=2", "mv_sg14", 2, 4, 0},
             };
     const int NV = sizeof(vs)/sizeof(vs[0]);
     const int REPS = 20;

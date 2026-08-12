@@ -1661,3 +1661,94 @@ kernel void mv_sg13(
         C[row*N + lcol + 1] = e[1];
     }
 }
+
+// ---------------------------------------------------------------------------
+// v14 = v13 with half A/B fragments and a float accumulator.
+//
+// Apple GPUs run fp16 arithmetic at double rate, and the inner loop is
+// dominated by thread_elements() register writes (32 per 16 weights) plus the
+// matrix ops themselves. If MSL accepts mixed precision -- half inputs, float
+// accumulator, as tensor cores generally do -- both halve.
+//
+// This variant converts the already-dequantized float values, so it measures
+// the ceiling of the idea, not a shippable kernel: A holds values around 1e-2
+// to 1e-5 and half's smallest normal is 6.1e-5, so a real version would carry
+// A as the exact small integers q*sc (<= 945, exact in half) and fold the
+// scale onto the float accumulator. Speed first; if it does not pay, the
+// precision work is moot.
+// ---------------------------------------------------------------------------
+kernel void mv_sg14(
+        device const block_q4_K * A  [[buffer(0)]],
+        device const float      * Bx [[buffer(1)]],
+        device const float      * SY [[buffer(2)]],   // unused
+        device       float      * C  [[buffer(3)]],
+        constant     int        & M  [[buffer(4)]],
+        constant     int        & K  [[buffer(5)]],
+        constant     int        & N  [[buffer(6)]],
+        uint tgpig [[threadgroup_position_in_grid]],
+        uint sgitg [[simdgroup_index_in_threadgroup]],
+        uint lane  [[thread_index_in_simdgroup]])
+{
+    const uint lrow = 4*(lane/16) + ((lane%8)/2);
+    const uint lcol = 4*((lane%16)/8) + 2*(lane%2);
+
+    const uint rows_sg = 8*NFRAG;
+    const uint row0    = tgpig*(NSG*rows_sg) + sgitg*rows_sg;
+    const uint nb      = (uint) K / QK_K;
+
+    simdgroup_float8x8 acc[NFRAG];  // accumulate in float
+    for (int f = 0; f < NFRAG; ++f) {
+        thread auto & e = acc[f].thread_elements();
+        e[0] = 0.0f; e[1] = 0.0f;
+    }
+
+    device const block_q4_K * base[NFRAG];
+    for (int f = 0; f < NFRAG; ++f) base[f] = A + (ulong)(row0 + f*8 + lrow)*nb;
+
+    for (uint ib = 0; ib < nb; ++ib) {
+        for (uint g = 0; g < 4; ++g) {
+            const ulong jlo = (ulong) ib*QK_K + (ulong)(2*g  )*32 + (ulong) lrow*4;
+            const ulong jhi = (ulong) ib*QK_K + (ulong)(2*g+1)*32 + (ulong) lrow*4;
+            const float4 bl0 = *((device const float4 *)(Bx + (ulong)(lcol  )*K + jlo));
+            const float4 bl1 = *((device const float4 *)(Bx + (ulong)(lcol+1)*K + jlo));
+            const float4 bh0 = *((device const float4 *)(Bx + (ulong)(lcol  )*K + jhi));
+            const float4 bh1 = *((device const float4 *)(Bx + (ulong)(lcol+1)*K + jhi));
+
+            for (int f = 0; f < NFRAG; ++f) {
+                device const block_q4_K * xb = base[f] + ib;
+                const uint2 qv = *((device const uint2 *)(xb->qs + g*32 + lcol*4));
+                const float dd = (float) xb->d * 255.0f;
+                const float dm = (float) xb->dmin;
+
+                uchar scl, mml, sch, mmh;
+                get_scale_min_k4((int)(2*g  ), xb->scales, scl, mml);
+                get_scale_min_k4((int)(2*g+1), xb->scales, sch, mmh);
+
+                const float dl = dd * (float) scl, ml = dm * (float) mml;
+                const float dh = dd * (float) sch, mh = dm * (float) mmh;
+
+                const float4 al0 = fma(unpack_unorm4x8_to_float(qv.x & 0x0F0F0F0Fu), dl, -ml);
+                const float4 al1 = fma(unpack_unorm4x8_to_float(qv.y & 0x0F0F0F0Fu), dl, -ml);
+                const float4 ah0 = fma(unpack_unorm4x8_to_float((qv.x >> 4) & 0x0F0F0F0Fu), dh, -mh);
+                const float4 ah1 = fma(unpack_unorm4x8_to_float((qv.y >> 4) & 0x0F0F0F0Fu), dh, -mh);
+
+                for (uint t = 0; t < 4; ++t) {
+                    simdgroup_half8x8 a, b;
+                    { thread auto & e = b.thread_elements(); e[0] = (half) bl0[t]; e[1] = (half) bl1[t]; }
+                    { thread auto & e = a.thread_elements(); e[0] = (half) al0[t]; e[1] = (half) al1[t]; }
+                    simdgroup_multiply_accumulate(acc[f], a, b, acc[f]);
+                    { thread auto & e = b.thread_elements(); e[0] = (half) bh0[t]; e[1] = (half) bh1[t]; }
+                    { thread auto & e = a.thread_elements(); e[0] = (half) ah0[t]; e[1] = (half) ah1[t]; }
+                    simdgroup_multiply_accumulate(acc[f], a, b, acc[f]);
+                }
+            }
+        }
+    }
+
+    for (int f = 0; f < NFRAG; ++f) {
+        thread auto & e = acc[f].thread_elements();
+        const ulong row = (ulong)(row0 + f*8 + lrow);
+        C[row*N + lcol    ] = e[0];
+        C[row*N + lcol + 1] = e[1];
+    }
+}
