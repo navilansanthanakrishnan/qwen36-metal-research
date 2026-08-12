@@ -71,6 +71,19 @@ it doubles as the correctness check described in Track 6's T6-6).
 
 ## Needs Navilan (do not block on it)
 
+### AC POWER — blocks all timing measurement
+
+At 2026-08-12 07:53Z the machine was **on battery** (98%, discharging) and
+`bench/env.sh` correctly refused every timing run: Apple Silicon drops GPU clocks
+on battery, so tok/s taken there is not comparable to the frozen baseline.
+
+**Plug the laptop in.** That is the whole fix. Nothing else is blocked.
+
+Correctness work is clock-independent and proceeds regardless — greedy outputs,
+perplexity, KL-divergence, acceptance rate at temperature 0, `test-backend-ops`,
+and gated-pipeline counts are all deterministic. Only tok/s needs AC.
+
+
 The GPU wired limit is unset, capping context at 4096. Raising it fits 32768.
 There is no passwordless sudo, so this is the one thing the run cannot do:
 
