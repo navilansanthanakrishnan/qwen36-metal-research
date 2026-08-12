@@ -27,10 +27,12 @@ alone already exceeds the budget. Two things must both happen:
      buys ~0.12 accepted tokens for 8.9 ms.
 
 **DONE (LEDGER 045): Q6_K extended, +24.3% end to end.** Superseded note follows.
-**NEXT: the quality gate has not been run on these kernels yet** — both are
-Class B, so `bench/quality-run.sh` (perplexity + KLD vs the frozen
-PPL 5.9079 +/- 0.14173 at -c 512 --chunks 40) must pass before either is
-called finished. Then tree drafting. Old note: extend the kernel to Q6_K (LEDGER 044). The kernel
+**Quality (LEDGER 046): token-exact on all 14 prompts, perplexity 5.9079 vs
+5.9079, backend-ops pass. KLD did NOT complete** — it dies at chunk 30 with
+`failed reading log-probs`, which is the stored base file running short, not a
+divergence (chunks 1-29 show KL 0.0008 at 100.000% same-token). **First job
+next session: regenerate the KLD base at the matching chunk count and re-run
+`bench/quality-run.sh`.** Then tree drafting. Old note: extend the kernel to Q6_K (LEDGER 044). The kernel
 covers Q4_K, which is 66.5% of the weight bytes; Q6_K is another 26.5% and
 carries `ffn_down` and the fused `attn_qkv`, still on the scalar path. That is
 why a 1.25-2.17x per-shape win became 1.17x on the model. Everything carries
