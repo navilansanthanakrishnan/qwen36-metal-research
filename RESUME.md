@@ -26,7 +26,19 @@ alone already exceeds the budget. Two things must both happen:
   2. mean_acc/fwd 3.29 -> ~4.7. Depth does not do this (041): each extra step
      buys ~0.12 accepted tokens for 8.9 ms.
 
-**The lever 040 actually unlocked is tree drafting, not depth.** Verify now
+**NEXT CONCRETE STEP: extend the kernel to Q6_K** (LEDGER 044). The kernel
+covers Q4_K, which is 66.5% of the weight bytes; Q6_K is another 26.5% and
+carries `ffn_down` and the fused `attn_qkv`, still on the scalar path. That is
+why a 1.25-2.17x per-shape win became 1.17x on the model. Everything carries
+over -- the lane layout, the reduction permutation, the fma fold -- only the
+unpack differs: Q6_K keeps 4 low bits in `ql`, 2 high bits in `qh`, and an
+int8 scale per 16 values, so it needs a shift-and-combine before
+`unpack_unorm4x8_to_float` instead of one mask. Work in
+`ggml/src/ggml-metal/ggml-metal.metal` next to `kernel_mul_mv_sgq4k_f32`, and
+prototype in `bench/sgmv.metal` first -- that loop iterates in seconds where a
+llama.cpp rebuild plus A/B is over half an hour.
+
+**After that, tree drafting rather than depth.** Verify now
 costs the same at width 8 as at width 5 (233-235 us flat, per-shape), so a
 tree of 8 candidates costs what a chain of 5 costs today. That raises
 mean_acc/fwd without adding draft steps, which is exactly the term the model
