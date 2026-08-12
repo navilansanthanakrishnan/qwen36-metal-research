@@ -3,7 +3,7 @@
 Working state for picking this up in a fresh context window. Overwrite freely —
 unlike LEDGER.md, this file is scratch.
 
-## STATUS 2026-08-12 (later): 21.41 tok/s at depth 4, target 35 — NOT reached
+## STATUS 2026-08-12 (later): 22.48 tok/s at depth 4, target 35 — NOT reached
 
 The register-resident Q4_K simdgroup kernel is **built, correct, integrated and
 kept**: llama.cpp branch `sgmv-q4k`, +12.05% under the frozen speculative A/B
@@ -26,7 +26,11 @@ alone already exceeds the budget. Two things must both happen:
   2. mean_acc/fwd 3.29 -> ~4.7. Depth does not do this (041): each extra step
      buys ~0.12 accepted tokens for 8.9 ms.
 
-**NEXT CONCRETE STEP: extend the kernel to Q6_K** (LEDGER 044). The kernel
+**DONE (LEDGER 045): Q6_K extended, +24.3% end to end.** Superseded note follows.
+**NEXT: the quality gate has not been run on these kernels yet** — both are
+Class B, so `bench/quality-run.sh` (perplexity + KLD vs the frozen
+PPL 5.9079 +/- 0.14173 at -c 512 --chunks 40) must pass before either is
+called finished. Then tree drafting. Old note: extend the kernel to Q6_K (LEDGER 044). The kernel
 covers Q4_K, which is 66.5% of the weight bytes; Q6_K is another 26.5% and
 carries `ffn_down` and the fused `attn_qkv`, still on the scalar path. That is
 why a 1.25-2.17x per-shape win became 1.17x on the model. Everything carries
