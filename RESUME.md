@@ -8,7 +8,14 @@ unlike LEDGER.md, this file is scratch.
 Measured across all 14 frozen prompts, MTP depth 4, `--spec-n-rs-seq 1`, ctx 4096,
 quant and quality untouched. Baseline was 14.567.
 
-**The remaining step is LEDGER 032 as CORRECTED BY 033**: a narrow-N tile for
+**The remaining step is LEDGER 035** (032/033 named the wrong mechanism; 034
+refuted the tile-shape thesis). 35 tok/s is provably out of reach for scalar
+arithmetic: it needs 6.94 ms/verify-column and scalar FP32 peak is 9.36. The one
+kernel that can clear it does not exist in any llama.cpp backend — dequantize
+K-quant weights into simdgroup 8x8 fragments held in REGISTERS (not threadgroup
+memory) and drive simdgroup_multiply_accumulate against an 8-wide B fragment.
+mul_mv/ext are register-resident but scalar; mul_mm uses matrix ops but stages A
+through threadgroup memory. Old note:: a narrow-N tile for
 `mul_mm` (4M×1N simdgroup arrangement, NR0=128/NR1=16). Verify at width 5 runs at
 3.88 TFLOP/s where the same kernel reaches 17.6 at n=512, because it computes a
 32-wide N tile for 5 columns. Predicted T_ver(5) 136.6 → ~95 ms → ~35 tok/s.
