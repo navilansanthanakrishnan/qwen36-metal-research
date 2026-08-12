@@ -291,6 +291,12 @@ Delegate for genuinely independent tracks. Don't delegate what you can finish in
 a handful of tool calls, and never spawn a subagent to double-check your own
 reasoning — that's the critic, and it only works because it's independent.
 
+**Long correctness runs take the lock too.** A `llama-perplexity` or KL-divergence
+pass holds 16 GiB and pins the GPU for many minutes, and `env.sh` will correctly
+refuse to benchmark while one is alive — so an unlocked correctness job silently
+blocks every timing run behind it. That already happened once. Anything that loads
+the model takes the lock, whether or not it is producing a tok/s number.
+
 **Parallelism is for thinking and building; measurement is serialized.** One GPU,
 18186 MiB of working set, a model that takes 16 GiB of it. Two benchmark
 processes at once means both numbers are garbage. `bench/env.sh` already refuses
