@@ -46,7 +46,16 @@ model-wide would mean T_ver(8) ~87 ms and ~28.7 tok/s at today's acceptance.
 Untried inside the kernel: NFRAG=2 (16 rows/simdgroup, halves B-load traffic;
 +3.5% on the narrow shape in the probe), and half-precision A/B fragments.
 
-**FR-SPEC EXISTS ALREADY (LEDGER 056).** shrey's `J-frspec` on branch
+**FR-SPEC IS CLOSED (LEDGER 061).** Three rankings tried -- wikitext,
+mixed-corpus, and the model's own output (which uses only 1808 distinct tokens,
+so coverage was 100%). All land 20-25% below the full head's acceptance, against
+a 3.72 break-even. The loss is structural: the trim must cover what the draft
+PROPOSES, and the proposal set is strictly broader than the emitted set by
+exactly the rejected tokens. Only instrumenting the draft's proposal stream
+would test it further. **The cost side stands: the cycle really does drop
+160 -> 112-124 ms, so the 46 ms of drafting is reducible -- by some other means.**
+
+Old note: **FR-SPEC EXISTS ALREADY (LEDGER 056).** shrey's `J-frspec` on branch
 `shrey/shipped` (commit d8e374596) is the draft-vocabulary trim this effort
 identified and deferred. Cherry-picked cleanly onto `frspec-test`; it fires,
 but N=32768 costs ~135 MB of contiguous copy and drove 39614 swap pages here,
