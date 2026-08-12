@@ -3,7 +3,21 @@
 Working state for picking this up in a fresh context window. Overwrite freely —
 unlike LEDGER.md, this file is scratch.
 
-## Where things stand
+## Where things stand (2026-08-12, target raised to 35 tok/s)
+
+**35 tok/s = 2.13x ceiling_1tok, so it is reachable only through speculation.**
+Depth 3 needs mean accepted 1.96 of 3 (65%); depth 8 lands back on a one-stream
+rung via mul_mm and needs only 35%. ngram at zero draft cost reaches 36.4 tok/s
+at a=1.5. The target is a well-posed engineering problem, not a wall.
+
+**Speculation currently does not run: everything OOMs.** The chain of causes is
+now fully traced and the fix is identified — see LEDGER 009-017. The single
+remaining blocker is that `token_embd` (682.03 MiB) is wired into the Metal
+buffer as a hole in the middle of a contiguous min→max mapping span, even though
+it is host-assigned. Splitting that mapping is the unlock.
+
+## Old status
+
 
 Setup is complete except for three gates that are blocked on **machine
 availability**, not on anything technical. Nothing has been optimized. The
