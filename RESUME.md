@@ -3,7 +3,10 @@
 Working state for picking this up in a fresh context window. Overwrite freely —
 unlike LEDGER.md, this file is scratch.
 
-## STATUS 2026-08-12 (later): 22.48 tok/s at depth 4, target 35 — NOT reached
+## STATUS 2026-08-12 (later): 23.32 tok/s, target 35 — NOT reached
+
+Best config: `--spec-draft-n-max 7`, `LLAMA_ARG_SPEC_MTP_MAX=4`,
+`LLAMA_ARG_SPEC_EXT_N=3`, `LLAMA_ARG_SPEC_N_RS_SEQ=3`, ctx 4096.
 
 The register-resident Q4_K simdgroup kernel is **built, correct, integrated and
 kept**: llama.cpp branch `sgmv-q4k`, +12.05% under the frozen speculative A/B
