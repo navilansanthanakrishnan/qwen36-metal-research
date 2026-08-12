@@ -50,6 +50,80 @@ Keep going. There is no final round.
 
 ---
 
+## Push to 30 — the standing continuation prompt
+
+```
+Target: 30 tok/s decode on Qwen3.6-27B-Q4_K_M, at unchanged quality. Baseline is
+14.567. That is a 2.06x speedup and it is the whole job now.
+
+Know what 30 requires before you start. ceiling_1tok is 16.40 tok/s — the wall for
+one token per forward pass — so 30 tok/s means an effective multiplier of 1.83
+after verify cost is paid, not before. Shrey realised 1.68x on twice this GPU
+(18.6 -> 31.3) from 2.94 accepted tokens per forward pass, so the token multiplier
+is only ~57% realised once verification is charged for. 30 tok/s therefore needs
+one of: higher acceptance than he got, a cheaper verify pass than he got, or bytes
+deleted from the per-token stream so the wall itself moves. Most likely all three.
+Say in the ledger which one a candidate is buying, every time.
+
+Start with what is already on the table. Do not go looking for new ideas while
+finished work sits unverified:
+
+1. Regenerate runs/kld/trunk-base.dat — it is 80K and looks truncated from a
+   killed process. No KLD verdict is trustworthy until it is rebuilt.
+2. Close the three open gates in SETUP-LOG.md.
+3. Measure the pending ledger rows: 002 (test coverage), 003 (S4 scale division),
+   004 (K-quant mul_mv_ext gate at ne11 2-3, your own finding and the most
+   interesting thing in the ledger).
+4. Finish s0-kquant-multicol — it is committed WIP and does not compile.
+5. Then LEADS.md top-down: L1 depth staircase, L2 ngram drafting on copy-heavy
+   categories, L10, L6 (the MTP draft step re-reading the 1.04 GB LM head), L8.
+
+Then run the real program, and treat it as research rather than a task list:
+
+- Find the actual bottleneck. Not the assumed one. Instrument it — per-op
+  throughput, gated pipeline counts, graph node counts, the GGML_METAL_*_DISABLE
+  switches turned off one at a time to price each existing optimisation. The
+  ~94%-of-ceiling figure that counts SSM recurrent-state traffic is still
+  unverified and it gates how much decode headroom exists at all. Settle it.
+- Understand the machine, not just the code. This is a 16-core M5, not a 32-core
+  M4. Establish whether this part exposes matrix or neural acceleration Metal can
+  reach — if it does, every prefill and verify-width conclusion inherited from an
+  M4 has a different ceiling here.
+- Read the literature. Speculative decoding is the unbounded lever, so that is
+  where papers pay: tree and multi-branch drafting, adaptive depth by context,
+  draft-vocabulary trimming, n-gram and prompt-lookup hybrids, verification
+  batching. Every paper exits as a ranked LEADS.md entry with a mechanism, a
+  predicted magnitude for this chip, and a falsifying experiment — or it produced
+  nothing.
+- Try things nobody has published. You have a calibrated rig, a quality oracle
+  and an honest ledger; that is exactly the apparatus that makes a wild idea cheap
+  to test and safe to be wrong about. One experiment in four goes off-list.
+  Impossibility is a hypothesis to test, not a conclusion to accept — but it gets
+  tested, never asserted.
+
+Non-negotiable, because these fail silently: builders never grade themselves —
+fresh-context critic, gets the diff and no narrative, and only critic numbers
+enter the ledger. Predict mechanism and magnitude before running. Report
+acceptance and tokens-per-forward next to every speculative number. No constant
+inherited from a 32-core part without being re-derived for 16.
+
+Never stop. bash bench/wait-for-env.sh blocks until the machine is measurable
+instead of failing; when it times out, drain the unmeasured queue — implement the
+next candidate, run the clock-independent correctness checks, read, diff against
+shrey/shipped, prepare upstream branches, re-rank leads — then wait again. The run
+ends when I stop it.
+
+And do not narrate intent. If you write "next I will X", do X in the same turn.
+An announcement is not an action, a plan to continue is not continuing, and a
+session that ends on "I'll keep going" has stopped. End your turns having done
+the thing, not having described it.
+
+Commit and push constantly. Keep LEDGER.md, RESUME.md and progress.html current.
+Keep going. There is no final round.
+```
+
+---
+
 ## Resume — every session after
 
 ```
