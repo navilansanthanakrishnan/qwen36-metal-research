@@ -254,6 +254,34 @@ run myself when I want to.
 The single hard blocker is `sudo`, which cannot be automated — see *The machine is
 in scope*. Route around it; never stall on it.
 
+### When the instrument is unavailable, you wait — you do not stop
+
+`bench/env.sh` refuses to measure on battery, under load, in Low Power Mode, or
+without enough working set. Every one of those refusals is correct and none of
+them is a reason to end a session. They are **temporary conditions that clear on
+their own**, usually in minutes.
+
+`bash bench/wait-for-env.sh [timeout] [interval]` blocks until conditions clear
+and exits 0. Use it in front of any measurement. When it times out, go do
+unmeasured work — do not stop.
+
+**Unmeasured work is most of this project**, and it never blocks:
+
+- implementing the next candidate, compiling it, and pushing the branch
+- everything clock-independent: greedy output diffs, perplexity, KL-divergence,
+  acceptance rate at temperature 0, `test-backend-ops`, gated-pipeline counts.
+  These are deterministic and correct on battery.
+- reading `shrey/shipped` and diffing our implementations against his
+- the literature pass, the CUDA/Vulkan diff, re-ranking `LEADS.md`
+- preparing upstream branches, writing tests, improving tooling
+- writing up what you learned in `LEDGER.md`
+
+Keep a queue of these and drain it whenever the rig is unavailable. **The run ends
+when I stop it, not when the laptop is unplugged.** If you genuinely exhaust every
+unmeasured task — which would be surprising — write that plainly in `RESUME.md`,
+state exactly what unblocks you, and go back to waiting on
+`wait-for-env.sh` with a long timeout rather than terminating.
+
 Decide your own decomposition — acceptance policy, draft/verify structure,
 recurrent-state traffic, mat-vec instantiation, graph fusion, dispatch overhead,
 build and shader flags, machine configuration. Fan out builders. Don't ask me
