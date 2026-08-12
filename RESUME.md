@@ -68,3 +68,16 @@ it doubles as the correctness check described in Track 6's T6-6).
   the procedure did not become credulous.
 - The exhaustive `gh pr list --state closed` sweep of 90 days of ggml-metal PRs
   did not complete. What upstream has already *rejected* is only partially known.
+
+## Needs Navilan (do not block on it)
+
+The GPU wired limit is unset, capping context at 4096. Raising it fits 32768.
+There is no passwordless sudo, so this is the one thing the run cannot do:
+
+```bash
+sudo sysctl iogpu.wired_limit_mb=20480
+```
+
+It resets on reboot. Everything in this project is measured at ctx 4096 and the
+frozen configuration assumes it — a larger context is an opportunity, not a
+prerequisite. Carry on without it.

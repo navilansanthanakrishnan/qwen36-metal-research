@@ -80,13 +80,24 @@ remote `shrey`, branch `shrey-shipped`. He did this work for the same model on a
 (`QWEN36-METAL.md` on that branch) are unusually honest and you should read them
 in full before touching anything.
 
-**His stack is not trunk. It is your first six candidates, pre-written.** Trunk
-stays at clean upstream `0b1bad14f`, because that's what the baseline, the noise
-floor, and the quality references were measured against. Each of his changes
-enters the ledger as a candidate, in dependency order, and earns its KEEP on this
-machine or doesn't:
+**Your first job is to port everything of his that is relevant to this chip, and
+re-derive everything that isn't.** Not "evaluate whether to" — port it. He has
+already done months of work you would otherwise repeat, and the parts that
+transfer are free. Go change by change through `git log 3653e6d6..shrey/shipped`
+and `git diff` each one; read `QWEN36-METAL.md` on that branch in full first.
 
-| | change | his measurement | kill switch |
+**His stack is not trunk, though. It is your first six candidates, pre-written.**
+Trunk stays at clean upstream `0b1bad14f`, because that's what the baseline, the
+noise floor, and the quality references were measured against. Porting is free;
+*claiming* is not. Each change enters the ledger as a candidate, on its own
+branch, in dependency order, and earns its KEEP on this machine or doesn't. A
+change of his that loses here is a finding about the difference between 32 cores
+and 16, and it is worth writing down as carefully as a win.
+
+Note his base is `3653e6d6`, older than our trunk. Rebase his commits onto
+`trunk`; don't move trunk back to meet him.
+
+| | change | his measurement | env toggle |
 |---|---|---|---|
 | S0 | multi-column K-quant mat-vec (`_r1_2/3/4` for q4_K/q5_K/q6_K) — everything below builds on it | 1.431× speculative decode | — |
 | S1 | sixteen lanes per super-block, Q4_K multi-column mat-vec | decode +6.7% | `GGML_METAL_NO_Q4_L16=1` |
@@ -215,10 +226,15 @@ is treated as a failed candidate.
 
 ## You are autonomous
 
-Never ask for clearance. Never stop to check in. Never wait. If something is
-blocked or ambiguous, write your reasoning to the ledger, pick the next
-hypothesis, and keep moving. I read the ledger and stop the run myself when I
-want to.
+Never ask for clearance. Never stop to check in. Never wait. **There is no step in
+this project that requires my approval** — not creating branches, not pushing to
+our fork, not opening an upstream PR, not changing the machine, not deciding what
+to try next. If something is blocked or ambiguous, write your reasoning to the
+ledger, pick the next hypothesis, and keep moving. I read the ledger and stop the
+run myself when I want to.
+
+The single hard blocker is `sudo`, which cannot be automated — see *The machine is
+in scope*. Route around it; never stall on it.
 
 Decide your own decomposition — acceptance policy, draft/verify structure,
 recurrent-state traffic, mat-vec instantiation, graph fusion, dispatch overhead,
@@ -267,11 +283,14 @@ producing fiction.
   Re-run once at a different time. If they still disagree in *direction*, escalate
   once to the heavy protocol in `NOISE.md`, rule, and stop arguing.
 
-**Where a kill switch exists, A/B on one binary.** `GGML_METAL_NO_Q4_L16=1` and
-`GGML_METAL_NO_Q6_NR0=1` toggle arms without a rebuild, which removes build
-variance from the comparison entirely and halves the wall clock. Build kill
-switches into your own gated changes for the same reason — an env-gated change is
-cheaper to verify, cheaper to bisect, and cheaper to withdraw.
+**Where an env toggle exists, A/B on one binary.** `GGML_METAL_NO_Q4_L16=1` and
+`GGML_METAL_NO_Q6_NR0=1` switch arms without a rebuild, which removes build
+variance from the comparison entirely and halves the wall clock. Build the same
+toggle into your own gated changes — an env-gated change is cheaper to verify,
+cheaper to bisect, and cheaper to withdraw.
+
+To be clear about what these are: a **measurement device**, not an escape hatch
+for me. Nothing in this project waits on a human flipping a switch.
 
 ## Measurement protocol
 
@@ -323,44 +342,70 @@ project.
 
 ## Git and fork discipline
 
-Both repositories are under version control and stay that way.
+The fork exists and is wired up. Use it. Nothing here needs my approval.
 
-- **`llama.cpp/`** — `trunk` is clean upstream `0b1bad14f`. `shrey-shipped`
-  tracks his branch. Every hypothesis gets its own branch off `trunk`, in its own
-  `git worktree`, named for the hypothesis. Commit early and often with real
-  messages: what changed, the predicted mechanism, the kill switch if any. Critics
-  build from the branch, never from a builder's working tree — a working tree can
-  carry uncommitted files and a warm cache, and rebuilding from the branch is what
-  makes the diff the only variable. Only KEEPs merge to `trunk`, one at a time.
+```
+origin    https://github.com/navilansanthanakrishnan/llama.cpp-qwen3.6-m5   ← ours, push freely
+upstream  https://github.com/ggml-org/llama.cpp                            ← read only
+shrey     https://github.com/shreyvish5678/llama.cpp-qwen3.6-metal         ← read only
+```
+
+Branches already present: `trunk` (clean upstream `0b1bad14f`, pushed to origin),
+`shrey-shipped` (his stack), `master` (upstream tracking).
+
+- **Every hypothesis gets its own branch off `trunk`, in its own `git worktree`,**
+  named for the hypothesis. Commit early and often with real messages: what
+  changed, the predicted mechanism, the gated variant if any. **Push every branch
+  to `origin` as you go** — a crash or a compaction must never cost work.
+- **Critics build from the branch**, never from a builder's working tree. A
+  working tree carries uncommitted files and a warm cache; rebuilding from the
+  branch is what makes the diff the only variable.
+- **Only KEEPs merge to `trunk`**, one at a time, and `trunk` is pushed after each
+  merge with the new baseline recorded in the commit message.
 - **The research tree** — commit after every ledger entry, every baseline
-  re-measurement, and every finding. `LEADS.md`, `LEDGER.md`, `NOISE.md` and
+  re-measurement, every finding. `LEADS.md`, `LEDGER.md`, `NOISE.md`,
   `BASELINE.md` are the project's memory; an uncommitted memory is one crash away
   from gone.
 - **Never touch `~/projects/forks/llama.cpp`.** It tracks upstream; read its
-  history if useful, write nothing.
-- Nothing large enters the source tree. Weights stay in
+  history, write nothing.
+- Nothing large enters the source tree. Weights in
   `~/projects/assets/models/qwen36-metal`, bulk output in
   `~/projects/assets/runs/qwen36-metal`, both symlinked in.
 
-When a change is worth upstreaming — S4's half-precision division fix and the
-`test-backend-ops` coverage block both are, on Shrey's own account — say so in
-the ledger and prepare it as a clean, separately-reviewable commit against
-upstream master. Don't open anything on GitHub without asking me.
+**Upstreaming is yours to do.** Two things are upstream-worthy on Shrey's own
+account and independent of this project: S4's `dequantize_q4_K` half-precision
+division fix, which makes every Q4_K model on Metal slightly more accurate, and
+the `test-backend-ops` coverage block. The unguarded `--spec-draft-n-max` clamp
+for single-head MTP models is a third. When you have one that is genuinely
+upstream-worthy — measured here, tested, minimal, and not tuned to this chip —
+prepare it as a clean branch against `upstream/master` and open the PR from our
+fork. Log it in the ledger. Don't upstream anything whose thresholds are
+M5-specific; that's what our fork is for.
+
+Identity is `Navilan Santhanakrishnan
+<143132458+NavilanSanthanakrishnan@users.noreply.github.com>`. Never commit
+secrets or raw transcripts.
 
 ## The machine is in scope
 
-You may change this machine, within limits. It is a legitimate optimization
-surface and some of the largest wins may be there:
+The machine is a legitimate optimization surface and some of the largest wins may
+be there. Power settings, background services, indexing, scheduler and thermal
+conditions are all fair game, all reversible, and all yours to change without
+asking.
 
-- The GPU wired limit is **unset** (`iogpu.wired_limit_mb = 0`), leaving 18186 MiB
-  of working set. Raising it to 20480 fits context 32768 instead of 4096. That
-  needs a password, so it needs me — write the exact command in `RESUME.md` and I
-  will run it.
-- Power settings, background services, indexing, and thermal conditions are all
-  fair game and all reversible.
+**The one thing you cannot do is `sudo`.** There is no passwordless sudo on this
+machine and you will not park credentials anywhere to get it. The GPU wired limit
+is therefore unset (`iogpu.wired_limit_mb = 0`), leaving 18186 MiB of working set
+and capping context at 4096; raising it to 20480 would fit 32768.
+
+**Do not block on this.** Try `sudo -n` once, and when it fails, write the exact
+command into `RESUME.md` under a heading I'll see, and carry on at context 4096.
+Everything in this project is measured at 4096 and the frozen configuration
+assumes it. A larger context is an opportunity, not a prerequisite, and a run that
+stalls waiting for a password has failed at the only thing it was asked to do.
 
 **Machine changes are not candidates.** A configuration change invalidates the
-frozen baseline, so it is never a "win" — it is a new configuration that requires
+frozen baseline, so it is never a "win" — it is a new configuration requiring
 re-baselining before any candidate is measured against it. Record the change, the
 exact command that reverses it, and the new baseline. Never let a machine change
 and a code change land in the same comparison.
@@ -510,10 +555,24 @@ bash bench/spec.sh --depth 1,2,3,4
 Then fill `PLACEHOLDER_SPEC_PENDING` in `BASELINE.md`, flip gates 3–5 in
 `SETUP-LOG.md`, and re-run `bash bench/phase-f.sh null` — the prefill-health gate
 was added to `decode.sh` *after* the null test ran, so confirm the procedure
-didn't become credulous. Commit all of it.
+didn't become credulous. Commit and push all of it.
 
-Then derive the floating-point noise scale and near-tie threshold, because S0–S3
-are Class B and you cannot adjudicate them without it.
+Then, in order:
+
+1. **Derive the floating-point noise scale and near-tie threshold.** S0–S3 are
+   Class B and cannot be adjudicated without it.
+2. **Add `bench/lock.sh`** and route every measurement through it.
+3. **Take Shrey's `test-backend-ops` coverage block first.** It is independent of
+   every Metal change, it is the piece he rates most portable, and it is what
+   makes the rest of the porting safe — without it, a kernel-selection change can
+   pass 14022/14022 while doing nothing.
+4. **Port S0, then S1, S2, S3, S4**, each on its own branch, each re-deriving any
+   threshold that encodes a core count, each through the critic.
+5. **Re-derive the depth policy (S5 and `LEADS.md` L1) last**, after the kernels
+   land — because a policy number is a measurement against a kernel stack and his
+   own depth-3 result only appeared once the width-gated kernels were in.
+
+Then the dossier, top-down, one experiment in four off-list.
 
 ## Known-good facts — do not re-derive
 
