@@ -30,6 +30,23 @@ alone already exceeds the budget. Two things must both happen:
      buys ~0.12 accepted tokens for 8.9 ms.
 
 **DONE (LEDGER 045): Q6_K extended, +24.3% end to end.** Superseded note follows.
+**THE BOUND, SHARPENED (LEDGER 052).** cycle = T_ver + drafting =
+114.4 + 46.1 = 160.5 ms at mean_acc/fwd 3.814. 35 tok/s needs a 109 ms cycle,
+which is *below T_ver(8)=114.4 alone* -- so acceptance must rise regardless.
+Reachable combinations: **mean_acc 4.00 with free drafting** (only +5% over
+today), 4.81 with drafting halved, 5.62 with drafting unchanged.
+
+**So the target is the 9.2 ms draft step, not the verify.** It splits into
+~4.3 ms for the 1 GB output head (at width 1 it is already at the 230 GB/s the
+hardware gives, so only reading fewer bytes helps -- a draft-only vocabulary
+restriction is quality-neutral because the target verifies every token, and
+the token-exact gate can prove it) and ~3.8 ms of per-step overhead (dispatch
++ the host round trip, since qwen35 is absent from the `ctx_other` sharing
+list at llama-context.cpp:142).
+
+Tried and exhausted: depth (041), hybrid drafting (048), union extension
+(049, +4%, at its ceiling per 051).
+
 **Quality (LEDGER 046): token-exact on all 14 prompts, perplexity 5.9079 vs
 5.9079, backend-ops pass. KLD did NOT complete** — it dies at chunk 30 with
 `failed reading log-probs`, which is the stored base file running short, not a

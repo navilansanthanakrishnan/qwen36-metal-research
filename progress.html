@@ -110,7 +110,7 @@ Verify cost has stopped growing with draft depth.</p>
 Acceptance is reported beside every speculative number so a kernel win cannot be confused with a drafting win.</p>
 
 <h2>The cost model, and what it demands</h2>
-<p class="mono">cycle = T_ver + (D+1) &middot; t_draft &nbsp;&nbsp;&rarr;&nbsp;&nbsp; t_draft = 8.9 ms, T_ver = 122.4 ms</p>
+<p class="mono">cycle = T_ver + drafting = 114.4 + 46.1 = 160.5 ms &nbsp;(mean_acc/fwd 3.814)</p>
 <p>Solved from the depth-4 and depth-7 measurements; it predicts depth 5 within 3%. 35 tok/s at depth 4
 needs a <strong>94.1 ms cycle</strong>. Drafting is only 44.5 ms of the current 166.9 &mdash; so
 <strong>making drafting entirely free would still not be enough</strong>, because T_ver alone exceeds the
