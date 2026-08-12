@@ -8,7 +8,14 @@ unlike LEDGER.md, this file is scratch.
 Measured across all 14 frozen prompts, MTP depth 4, `--spec-n-rs-seq 1`, ctx 4096,
 quant and quality untouched. Baseline was 14.567.
 
-**The remaining step is LEDGER 035, now shown IMPLEMENTABLE by 036** (032/033 named the wrong mechanism; 034
+**The remaining step is LEDGER 035; 036 proved it expressible and 037 supplies
+the last missing detail (the lane->element mapping). Nothing unknown remains --
+what is left is writing and validating the kernel.**
+
+  row = 4*(lane/16) + (lane%8)/2
+  col = 4*((lane%16)/8) + 2*(lane%2)      e[0]=(row,col), e[1]=(row,col+1)
+
+Original note: (032/033 named the wrong mechanism; 034
 refuted the tile-shape thesis). 35 tok/s is provably out of reach for scalar
 arithmetic: it needs 6.94 ms/verify-column and scalar FP32 peak is 9.36. The one
 kernel that can clear it does not exist in any llama.cpp backend — dequantize
