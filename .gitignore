@@ -10,3 +10,11 @@ bench/bwprobe/bwprobe
 bench/gpuinfo/gpuinfo
 llama.cpp/
 wt/
+
+# compiled probes (build with the command in their header comment)
+bench/sgmv
+bench/sgmap
+bench/sgprobe
+# asset symlinks: weights and run output live outside the source tree
+models
+runs
