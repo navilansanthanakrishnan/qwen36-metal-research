@@ -38,6 +38,15 @@ flip gates 3–5 in the SETUP-LOG status table.
 
 ## Known-good facts that took time to establish (do not re-derive)
 
+- **`bench/quality.sh` must be run through `bench/quality-run.sh`** (or with
+  `LLAMA_ARG_BATCH=512` exported). llama-perplexity defaults to `-b 2048`, which
+  allocates 2.03 GB of logits (2048 x 248320 x 4) on top of the 16 GiB model and
+  OOMs. Perplexity is batch-independent, so this changes what completes, not what
+  is measured. quality.sh itself is frozen and untouched.
+- **Frozen perplexity baseline: PPL = 5.9079 +/- 0.14173** at
+  `-c 512 --chunks 40` on `runs/corpus/wikitext-2-raw/wiki.test.raw`. Always
+  quote the chunk count with the number.
+
 - Frozen context is **4096**, not what the fitter says. 16384 passes llama.cpp's
   fitter and OOMs in `llama-server` during warmup; 8192 loads but decodes at
   5.69 tok/s. See HARDWARE.md.
