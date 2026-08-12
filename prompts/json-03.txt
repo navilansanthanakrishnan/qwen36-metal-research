@@ -1,0 +1,3 @@
+Return a JSON array of eight objects describing the first eight chemical
+elements. Each object must have `number`, `symbol`, `name`, `atomic_mass`
+(number), and `category` (string). Return only JSON, no prose.

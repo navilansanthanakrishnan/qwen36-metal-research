@@ -1,0 +1,10 @@
+Add proper error handling to the following code: the file may not exist, may not
+be valid JSON, and may not contain the expected keys. Report each failure
+distinctly with a useful message, and do not swallow unexpected exceptions.
+Print the complete revised code.
+
+import json
+
+def load_config(path):
+    cfg = json.load(open(path))
+    return cfg["host"], cfg["port"], cfg["timeout"]

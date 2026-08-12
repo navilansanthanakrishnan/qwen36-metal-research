@@ -1,0 +1,5 @@
+Write a POSIX shell script `rotate-logs.sh` that takes a directory and a count
+N. It renames `app.log` to `app.log.1`, shifting existing numbered logs upward,
+deletes anything beyond `app.log.N`, and recreates an empty `app.log` with the
+original file's ownership and mode. It must fail loudly on a missing directory
+and be safe to run twice. Output only the script.

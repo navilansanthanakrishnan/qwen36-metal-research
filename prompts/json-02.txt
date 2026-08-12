@@ -1,0 +1,5 @@
+Produce a JSON configuration file for a three-tier web service. It must include
+a `service` object (name, version, port), a `database` object (host, port, pool
+with min and max, and a `tls` sub-object with enabled and ca_path), a `cache`
+object (backend, ttl_seconds, max_entries), and a `logging` object (level,
+format, an array of two sinks each with type and target). Return only JSON.

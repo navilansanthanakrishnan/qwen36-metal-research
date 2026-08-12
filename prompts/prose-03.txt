@@ -1,0 +1,3 @@
+Make the strongest case you can that benchmark results published without a
+stated noise floor should be treated as unpublished. Anticipate and answer the
+two best objections to that position. Around 400 words.

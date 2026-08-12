@@ -1,0 +1,8 @@
+Extract the structured data from the text below and return a single JSON object
+with keys: `name`, `founded` (integer year), `headquarters`, `employees`
+(integer), and `products` (array of strings). Return only JSON, no prose.
+
+Northwind Instruments was founded in 1974 in Portland, Oregon, where it still
+keeps its head office. The company employs about 320 people and is known for
+three product lines: the Cascade oscilloscope, the Tern signal generator, and
+the Basalt logic analyser.

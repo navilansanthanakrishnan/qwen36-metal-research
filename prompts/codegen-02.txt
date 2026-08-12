@@ -1,0 +1,5 @@
+Write a Python class `RingBuffer` backed by a fixed-size list. It must support
+`push(item)` (overwriting the oldest element when full), `pop()` returning the
+oldest element, `__len__`, `__iter__` in oldest-to-newest order, and a
+`capacity` property. Raise `IndexError` on `pop` from empty. Include docstrings
+and a small `__main__` demo. Output only the code.

@@ -1,0 +1,4 @@
+Write a Python function `merge_intervals(intervals)` that takes a list of
+`(start, end)` tuples, merges every pair that overlaps or touches, and returns
+the merged list sorted by start. Handle the empty list. Include a short
+docstring and three assert-based tests. Output only the code.

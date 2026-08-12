@@ -1,0 +1,4 @@
+Explain, for a reader who knows how to program but has never studied computer
+architecture, why reading data from main memory is so much slower than doing
+arithmetic, and what a cache actually does about it. Use concrete numbers.
+Around 400 words. No bullet lists.

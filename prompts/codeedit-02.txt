@@ -1,0 +1,17 @@
+Refactor the following function so the retry policy is injected rather than
+hard-coded, keeping the behaviour identical for the current defaults. Print the
+complete refactored code.
+
+import time
+import urllib.request
+
+def fetch(url):
+    last = None
+    for attempt in range(5):
+        try:
+            with urllib.request.urlopen(url, timeout=10) as r:
+                return r.read()
+        except Exception as e:
+            last = e
+            time.sleep(0.5 * (2 ** attempt))
+    raise last

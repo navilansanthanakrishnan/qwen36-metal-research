@@ -1,0 +1,13 @@
+# upstream checkout — has its own history, work happens on branches inside it
+llama.cpp/
+
+# local python env for gguf_dump.py only
+.venv/
+
+# build products from the probes
+bench/bwprobe/bwprobe
+bench/gpuinfo/gpuinfo
+
+# transient
+*.tmp
+.DS_Store
