@@ -8,7 +8,7 @@ unlike LEDGER.md, this file is scratch.
 Measured across all 14 frozen prompts, MTP depth 4, `--spec-n-rs-seq 1`, ctx 4096,
 quant and quality untouched. Baseline was 14.567.
 
-**The one remaining step is specified in LEDGER 032**: a narrow-N tile for
+**The remaining step is LEDGER 032 as CORRECTED BY 033**: a narrow-N tile for
 `mul_mm` (4M×1N simdgroup arrangement, NR0=128/NR1=16). Verify at width 5 runs at
 3.88 TFLOP/s where the same kernel reaches 17.6 at n=512, because it computes a
 32-wide N tile for 5 columns. Predicted T_ver(5) 136.6 → ~95 ms → ~35 tok/s.
