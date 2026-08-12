@@ -3,7 +3,18 @@
 Working state for picking this up in a fresh context window. Overwrite freely —
 unlike LEDGER.md, this file is scratch.
 
-## Where things stand (2026-08-12, target raised to 35 tok/s)
+## STATUS 2026-08-12: 20.670 tok/s mean (best 25.620), target 35 — NOT reached
+
+Measured across all 14 frozen prompts, MTP depth 4, `--spec-n-rs-seq 1`, ctx 4096,
+quant and quality untouched. Baseline was 14.567.
+
+**The one remaining step is specified in LEDGER 032**: a narrow-N tile for
+`mul_mm` (4M×1N simdgroup arrangement, NR0=128/NR1=16). Verify at width 5 runs at
+3.88 TFLOP/s where the same kernel reaches 17.6 at n=512, because it computes a
+32-wide N tile for 5 columns. Predicted T_ver(5) 136.6 → ~95 ms → ~35 tok/s.
+Six coupled sites must change together; do not attempt without budget to validate.
+
+## Where things stand (earlier)
 
 **35 tok/s = 2.13x ceiling_1tok, so it is reachable only through speculation.**
 Depth 3 needs mean accepted 1.96 of 3 (65%); depth 8 lands back on a one-stream
