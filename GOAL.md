@@ -75,27 +75,45 @@ Three fronts remain, in order of headroom:
 ## Where you start: Shrey's fork
 
 `https://github.com/shreyvish5678/llama.cpp-qwen3.6-metal`, already wired in as
-remote `shrey`, branch `shrey-shipped`. He did this work for the same model on a
+read-only remote `shrey`. He did this work for the same model on a
 **32-core M4 Max, 410 GB/s, 36 GB** — roughly twice this GPU. His fork notes
 (`QWEN36-METAL.md` on that branch) are unusually honest and you should read them
 in full before touching anything.
 
-**Your first job is to port everything of his that is relevant to this chip, and
-re-derive everything that isn't.** Not "evaluate whether to" — port it. He has
-already done months of work you would otherwise repeat, and the parts that
-transfer are free. Go change by change through `git log 3653e6d6..shrey/shipped`
-and `git diff` each one; read `QWEN36-METAL.md` on that branch in full first.
+**His repository is reference, not a source branch. There is no `shrey-shipped`
+branch and there should not be one.** Everything we ship is our own
+implementation, on our own branches off `trunk`, written for a 16-core M5. His
+work is readable at `shrey/shipped` — `git log shrey/shipped`,
+`git show shrey/shipped:<path>`, `git diff 3653e6d6 shrey/shipped -- <path>` —
+and `QWEN36-METAL.md` on that branch is the most valuable document in the
+project. Read it in full before you write a line.
 
-**His stack is not trunk, though. It is your first six candidates, pre-written.**
-Trunk stays at clean upstream `0b1bad14f`, because that's what the baseline, the
-noise floor, and the quality references were measured against. Porting is free;
-*claiming* is not. Each change enters the ledger as a candidate, on its own
-branch, in dependency order, and earns its KEEP on this machine or doesn't. A
-change of his that loses here is a finding about the difference between 32 cores
-and 16, and it is worth writing down as carefully as a win.
+**Take the mechanism. Leave the constants.** That is the entire discipline here.
+He tuned to a 32-core M4 Max with different register pressure and no matrix unit,
+and he says so himself: *"the thresholds are tuned to this chip… another part
+should re-derive it rather than inherit it."* A verbatim port carries his
+constants and his assumptions invisibly, and they would then be load-bearing in
+our fork with nobody able to defend them. Re-implementing from the mechanism
+forces every constant to be derived here — which is the only way `ne01 >= 4096`
+(16 threadgroups per core on 32 cores) becomes whatever the right number is on
+16 cores.
 
-Note his base is `3653e6d6`, older than our trunk. Rebase his commits onto
-`trunk`; don't move trunk back to meet him.
+So these are not his six patches. They are **six mechanisms he proved are real on
+Apple silicon**, each of which we implement ourselves and measure here:
+
+Trunk stays at clean upstream `0b1bad14f` — that's what the baseline, noise floor
+and quality references were measured against. Each mechanism enters the ledger as
+our own candidate, on its own branch, in dependency order, and earns its KEEP on
+this machine or doesn't. One that loses here is a finding about the difference
+between 32 cores and 16, and worth writing down as carefully as a win.
+
+**Then diff against his, once, as a checklist.** After your implementation
+measures clean, compare it to his and account for every difference. Not to adopt
+his version — to find what he knew that you didn't. His `mul_mm` tile is encoded
+in six independent places and four were wrong in his first attempt; one was a
+`short` holding a 64-bit row stride that wraps past `k = 32768` and reads ~4 MB
+before the buffer. That is exactly the class of detail worth inheriting, and
+exactly the class a from-scratch implementation repeats.
 
 | | change | his measurement | env toggle |
 |---|---|---|---|
@@ -350,8 +368,11 @@ upstream  https://github.com/ggml-org/llama.cpp                            ← r
 shrey     https://github.com/shreyvish5678/llama.cpp-qwen3.6-metal         ← read only
 ```
 
-Branches already present: `trunk` (clean upstream `0b1bad14f`, pushed to origin),
-`shrey-shipped` (his stack), `master` (upstream tracking).
+Branches: `trunk` (clean upstream `0b1bad14f`, pushed to origin) and `master`
+(upstream tracking). **There is deliberately no branch carrying Shrey's code.**
+His work is reachable as a remote-tracking ref for reading and diffing; it never
+becomes a branch we build on or merge from. Everything on `origin` is ours and
+defensible.
 
 - **Every hypothesis gets its own branch off `trunk`, in its own `git worktree`,**
   named for the hypothesis. Commit early and often with real messages: what
@@ -503,10 +524,12 @@ the frozen perplexity slice are part of the measurement surface, not tunables.
 - A gain that only appears when the machine is hot, or only when it's cold.
 - A gain bought with memory the model needs, or with a machine configuration
   change smuggled into a code comparison.
-- **A number from Shrey's machine.** His techniques are leads; his measurements
-  were taken on twice this GPU and never enter this ledger as evidence. Every one
-  of his changes is re-measured here or it doesn't count.
-- A threshold inherited from a 32-core part without being re-derived for 16.
+- **A number from Shrey's machine.** His mechanisms are leads; his measurements
+  were taken on twice this GPU and never enter this ledger as evidence. Every
+  mechanism is re-implemented and re-measured here or it doesn't count.
+- A threshold inherited from a 32-core part without being re-derived for 16. If
+  you cannot say where a constant came from and why it is right for 16 cores, it
+  is not ready to merge.
 
 ## Ledger
 
@@ -562,15 +585,19 @@ Then, in order:
 1. **Derive the floating-point noise scale and near-tie threshold.** S0–S3 are
    Class B and cannot be adjudicated without it.
 2. **Add `bench/lock.sh`** and route every measurement through it.
-3. **Take Shrey's `test-backend-ops` coverage block first.** It is independent of
-   every Metal change, it is the piece he rates most portable, and it is what
-   makes the rest of the porting safe — without it, a kernel-selection change can
-   pass 14022/14022 while doing nothing.
-4. **Port S0, then S1, S2, S3, S4**, each on its own branch, each re-deriving any
-   threshold that encodes a core count, each through the critic.
-5. **Re-derive the depth policy (S5 and `LEADS.md` L1) last**, after the kernels
-   land — because a policy number is a measurement against a kernel stack and his
-   own depth-3 result only appeared once the width-gated kernels were in.
+3. **Write the `test-backend-ops` coverage first**, before any kernel. He
+   identified the gaps — no K-quant mat-vec case above `ne01 = 16`, one `mul_mm`
+   perf shape, almost no partial-tile coverage, and `graph_optimize` never called
+   — and those gaps are upstream's, not his, so they are ours too. Write our own
+   cases for them, plus every shape our own kernels will select between. Do this
+   first because without it a kernel-selection change passes 14022/14022 while
+   doing nothing, which is how he shipped a change whose gate was never exercised.
+4. **Implement S0, then S1, S2, S3, S4**, each on its own branch, each constant
+   derived here rather than inherited, each through the critic. Diff against his
+   afterward as a checklist.
+5. **Derive the depth policy (S5 and `LEADS.md` L1) last**, after the kernels
+   land — a policy number is a measurement against a kernel stack, and his own
+   depth-3 result only appeared once the width-gated kernels were in.
 
 Then the dossier, top-down, one experiment in four off-list.
 
