@@ -3,30 +3,34 @@
 Working state for picking this up in a fresh context window. Overwrite freely —
 unlike LEDGER.md, this file is scratch.
 
-## STATUS 2026-08-12: 20.670 tok/s mean (best 25.620), target 35 — NOT reached
+## STATUS 2026-08-12 (later): 19.728 tok/s ALL at depth 4, target 35 — NOT reached
 
-Measured across all 14 frozen prompts, MTP depth 4, `--spec-n-rs-seq 1`, ctx 4096,
-quant and quality untouched. Baseline was 14.567.
+The register-resident Q4_K simdgroup kernel is **built, correct, integrated and
+kept**: llama.cpp branch `sgmv-q4k`, +12.05% under the frozen speculative A/B
+(p=0.0312, CI [+9.87,+14.23], acceptance unchanged). See LEDGER 038-041.
 
-**The remaining step is LEDGER 035; 036 proved it expressible and 037 supplies
-the last missing detail (the lane->element mapping). Nothing unknown remains --
-what is left is writing and validating the kernel.**
+Run it as: `LLAMA_ARG_SPEC_N_RS_SEQ=1`, MTP depth 4, ctx 4096.
+`GGML_METAL_SGMV_DISABLE=1` selects the old path for A/B on one binary.
 
-  row = 4*(lane/16) + (lane%8)/2
-  col = 4*((lane%16)/8) + 2*(lane%2)      e[0]=(row,col), e[1]=(row,col+1)
+**The cost model is now solved, and it says what has to happen next.**
 
-Original note: (032/033 named the wrong mechanism; 034
-refuted the tile-shape thesis). 35 tok/s is provably out of reach for scalar
-arithmetic: it needs 6.94 ms/verify-column and scalar FP32 peak is 9.36. The one
-kernel that can clear it does not exist in any llama.cpp backend — dequantize
-K-quant weights into simdgroup 8x8 fragments held in REGISTERS (not threadgroup
-memory) and drive simdgroup_multiply_accumulate against an 8-wide B fragment.
-mul_mv/ext are register-resident but scalar; mul_mm uses matrix ops but stages A
-through threadgroup memory. Old note:: a narrow-N tile for
-`mul_mm` (4M×1N simdgroup arrangement, NR0=128/NR1=16). Verify at width 5 runs at
-3.88 TFLOP/s where the same kernel reaches 17.6 at n=512, because it computes a
-32-wide N tile for 5 columns. Predicted T_ver(5) 136.6 → ~95 ms → ~35 tok/s.
-Six coupled sites must change together; do not attempt without budget to validate.
+    cycle = T_ver + (D+1)*t_draft      t_draft = 8.9 ms, T_ver = 122.4 ms
+
+35 tok/s at depth 4 needs a 94.1 ms cycle. Drafting is only 44.5 ms of the
+current 166.9, so **making drafting free is not enough on its own** -- T_ver
+alone already exceeds the budget. Two things must both happen:
+
+  1. T_ver 122 -> ~90 ms. The standalone probe shows this kernel runs at 170
+     GB/s against a 213 GB/s loads-only ceiling for its access pattern, so
+     roughly 25% is still on the table inside the kernel itself.
+  2. mean_acc/fwd 3.29 -> ~4.7. Depth does not do this (041): each extra step
+     buys ~0.12 accepted tokens for 8.9 ms.
+
+**The lever 040 actually unlocked is tree drafting, not depth.** Verify now
+costs the same at width 8 as at width 5 (233-235 us flat, per-shape), so a
+tree of 8 candidates costs what a chain of 5 costs today. That raises
+mean_acc/fwd without adding draft steps, which is exactly the term the model
+says is missing. It needs tree attention masks in speculative.cpp.
 
 ## Where things stand (earlier)
 
