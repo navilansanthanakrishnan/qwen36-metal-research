@@ -49,11 +49,11 @@
 
 <h2>Where the number is</h2>
 <div class="grid">
-  <div class="card"><div class="k">now</div><div class="v">23.32</div><div class="n">tok/s &middot; LEDGER 049</div></div>
+  <div class="card"><div class="k">now</div><div class="v">23.76</div><div class="n">tok/s &middot; LEDGER 050</div></div>
   <div class="card"><div class="k">baseline</div><div class="v">14.567</div><div class="n">tok/s &plusmn; 0.404 (n=10)</div></div>
-  <div class="card"><div class="k">target</div><div class="v">35.00</div><div class="n">not reached &mdash; 1.50&times; to go</div>
-    <div class="bar"><i style="width:67%"></i></div></div>
-  <div class="card"><div class="k">gain so far</div><div class="v">1.60&times;</div><div class="n">over frozen baseline</div></div>
+  <div class="card"><div class="k">target</div><div class="v">35.00</div><div class="n">not reached &mdash; 1.47&times; to go</div>
+    <div class="bar"><i style="width:68%"></i></div></div>
+  <div class="card"><div class="k">gain so far</div><div class="v">1.63&times;</div><div class="n">over frozen baseline</div></div>
   <div class="card"><div class="k">1 tok/pass ceiling</div><div class="v">16.40</div><div class="n">270.8 GB/s &divide; 16.52 GB</div></div>
   <div class="card"><div class="k">min detectable effect</div><div class="v">3.0%</div><div class="n">KEEP threshold</div></div>
 </div>
@@ -94,6 +94,7 @@ Verify cost has stopped growing with draft depth.</p>
 <h2>What is measured, and how</h2>
 <div class="scroll"><table>
 <tr><th>#</th><th>Change</th><th>Effect</th><th>p</th><th>Verdict</th></tr>
+<tr><td>050</td><td>Q5_K kernel (<code>ssm_out</code>) — 99.1% of weights covered</td><td class="num">+4.1%</td><td class="num">0.0312</td><td><span class="tag t-keep">KEEP</span></td></tr>
 <tr><td>049</td><td>union draft extension (append, not substitute)</td><td class="num">+4.4%</td><td class="num">0.0312</td><td><span class="tag t-keep">KEEP</span></td></tr>
 <tr><td>048</td><td>hybrid MTP+ngram (impls are alternatives)</td><td class="num">&minus;10%</td><td>&mdash;</td><td><span class="tag t-rej">REJECT</span></td></tr>
 <tr><td>045</td><td>same kernel extended to Q6_K (<code>ffn_down</code>, <code>attn_qkv</code>)</td><td class="num">+24.3%</td><td class="num">0.0312</td><td><span class="tag t-keep">KEEP</span></td></tr>
