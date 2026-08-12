@@ -36,7 +36,17 @@ which is *below T_ver(8)=114.4 alone* -- so acceptance must rise regardless.
 Reachable combinations: **mean_acc 4.00 with free drafting** (only +5% over
 today), 4.81 with drafting halved, 5.62 with drafting unchanged.
 
-**So the target is the 9.2 ms draft step, not the verify.** It splits into
+**CORRECTION (LEDGER 054): the 43.3 ms of width-scaling is matmul, not the
+recurrence.** GATED_DELTA_NET measures 9.20 us at width 1 for this model's
+shape, so 48 layers are ~1.4 ms at width 8 -- about 1% of T_ver(8). The kernel
+is flat 4->8 but costs 2.1x a width-1 mul_mv because it does 8 columns.
+Model-wide width-8 verify is 144 GB/s vs 170 standalone and a 212.9 GB/s
+loads-only ceiling, so **the kernel is still the biggest lever**; 190 GB/s
+model-wide would mean T_ver(8) ~87 ms and ~28.7 tok/s at today's acceptance.
+Untried inside the kernel: NFRAG=2 (16 rows/simdgroup, halves B-load traffic;
++3.5% on the narrow shape in the probe), and half-precision A/B fragments.
+
+**The 9.2 ms draft step is the other lever.** It splits into
 ~4.3 ms for the 1 GB output head (at width 1 it is already at the 230 GB/s the
 hardware gives, so only reading fewer bytes helps -- a draft-only vocabulary
 restriction is quality-neutral because the target verifies every token, and
