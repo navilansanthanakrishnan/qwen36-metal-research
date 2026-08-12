@@ -30,7 +30,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 DEPTH=2; PAIRS=6; ENVA=""; ENVB=""; LA="A"; LB="B"; PORT=18095; NPREDICT=192
-SPEC_TYPE="draft-mtp"
+SPEC_TYPE="draft-mtp"; SPEC_TYPE_A=""; SPEC_TYPE_B=""; DEPTH_A=""; DEPTH_B=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --depth)   DEPTH="$2"; shift 2 ;;
@@ -41,7 +41,15 @@ while [[ $# -gt 0 ]]; do
         --lb)      LB="$2"; shift 2 ;;
         --port)    PORT="$2"; shift 2 ;;
         --npredict) NPREDICT="$2"; shift 2 ;;
-        --spec-type) SPEC_TYPE="$2"; shift 2 ;;
+        --spec-type) SPEC_TYPE="$2"; SPEC_TYPE_A="$2"; SPEC_TYPE_B="$2"; shift 2 ;;
+        # Per-arm drafter/depth, so a drafting change can be A/B'd under the same
+        # pairing as an env change. Without these, comparing two spec-types means
+        # comparing two separate runs, which is exactly what the interleaving is
+        # here to avoid.
+        --spec-type-a) SPEC_TYPE_A="$2"; shift 2 ;;
+        --spec-type-b) SPEC_TYPE_B="$2"; shift 2 ;;
+        --depth-a)     DEPTH_A="$2"; shift 2 ;;
+        --depth-b)     DEPTH_B="$2"; shift 2 ;;
         --bina)    BINA="$2"; shift 2 ;;
         --binb)    BINB="$2"; shift 2 ;;
         *) echo "specab.sh: unknown arg $1" >&2; exit 1 ;;
@@ -57,10 +65,18 @@ TMP="$(mktemp -d)"
 trap 'pkill -f "llama-server.*--port $PORT" 2>/dev/null; rm -rf "$TMP"' EXIT
 : >"$TMP/a"; : >"$TMP/b"; : >"$TMP/rows.jsonl"
 
-run_arm() {   # $1=label $2=envstring $3=outfile $4=bindir $5=pairidx
-    local label="$1" envs="$2" out="$3" bin="$4" pidx="$5"
-    local specargs="--spec-type $SPEC_TYPE"
-    [[ "$SPEC_TYPE" != "none" ]] && specargs="$specargs --spec-draft-n-max $DEPTH --spec-draft-n-min 0"
+run_arm() {   # $1=label $2=envstring $3=outfile $4=bindir $5=pairidx $6=arm(a|b)
+    local label="$1" envs="$2" out="$3" bin="$4" pidx="$5" arm="${6:-a}"
+    local st="$SPEC_TYPE" dp="$DEPTH"
+    if [[ "$arm" == "b" ]]; then
+        [[ -n "$SPEC_TYPE_B" ]] && st="$SPEC_TYPE_B"
+        [[ -n "$DEPTH_B"     ]] && dp="$DEPTH_B"
+    else
+        [[ -n "$SPEC_TYPE_A" ]] && st="$SPEC_TYPE_A"
+        [[ -n "$DEPTH_A"     ]] && dp="$DEPTH_A"
+    fi
+    local specargs="--spec-type $st"
+    [[ "$st" != "none" ]] && specargs="$specargs --spec-draft-n-max $dp --spec-draft-n-min 0"
 
     ( unset GGML_METAL_NO_KQUANT_EXT2 GGML_METAL_NO_Q4K_MULTICOL
       [[ -n "$envs" ]] && export $envs
@@ -145,6 +161,7 @@ PY
 }
 
 echo "specab: depth=$DEPTH spec-type=$SPEC_TYPE pairs=$PAIRS ctx=$QM_CTX"
+echo "specab: arm A spec-type=${SPEC_TYPE_A:-$SPEC_TYPE} depth=${DEPTH_A:-$DEPTH} | arm B spec-type=${SPEC_TYPE_B:-$SPEC_TYPE} depth=${DEPTH_B:-$DEPTH}"
 echo "specab: $LA env=[${ENVA:-none}] bin=$BINA"
 echo "specab: $LB env=[${ENVB:-none}] bin=$BINB"
 echo "specab: $("$HERE/thermal.sh")"
@@ -152,11 +169,11 @@ echo "specab: $("$HERE/thermal.sh")"
 for ((i=1; i<=PAIRS; i++)); do
     echo "  pair $i:"
     if (( i % 2 == 1 )); then
-        run_arm "$LA" "$ENVA" "$TMP/a" "$BINA" "$i"
-        run_arm "$LB" "$ENVB" "$TMP/b" "$BINB" "$i"
+        run_arm "$LA" "$ENVA" "$TMP/a" "$BINA" "$i" a
+        run_arm "$LB" "$ENVB" "$TMP/b" "$BINB" "$i" b
     else
-        run_arm "$LB" "$ENVB" "$TMP/b" "$BINB" "$i"
-        run_arm "$LA" "$ENVA" "$TMP/a" "$BINA" "$i"
+        run_arm "$LB" "$ENVB" "$TMP/b" "$BINB" "$i" b
+        run_arm "$LA" "$ENVA" "$TMP/a" "$BINA" "$i" a
     fi
 done
 
