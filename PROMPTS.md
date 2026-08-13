@@ -168,6 +168,60 @@ Keep going.
 
 ---
 
+## Decode to 30 — lead-researcher continuation
+
+```
+Read GOAL.md, then RESUME.md, the tail of LEDGER.md, LEADS.md, BASELINE.md and
+NOISE.md. Act on what those files say, not on what you remember.
+
+Decode only this run. You are at 23.76 tok/s. **You stop at 30 and nothing else
+ends this run.**
+
+The cycle is 160.5 ms at 3.814 accepted tokens per forward pass — verify 114.4,
+drafting 46.1. 30 tok/s needs 127 ms. So ~33 ms comes out, or acceptance rises,
+or both. Everything inside that cycle is yours: acceptance rate, draft depth and
+stopping policy, the 9.2 ms draft step, the 1 GB output-head read at width 1, the
+host round trip qwen35 pays for not being on the `ctx_other` sharing list, and the
+width-8 verify matmul that is two thirds of the cycle.
+
+**You are the lead researcher here, not a task runner.** Set the direction.
+Decide what is worth knowing and then find out: profile before you theorise, read
+the literature on speculative decoding and drafting policy, port what other
+backends already prove, and invent what nobody has published. Ledger 052 says 35
+was unreachable *at that acceptance* — a statement about one configuration, not a
+law. This project has already reversed exactly that kind of conclusion once, when
+depth 3 went from a closed loss to a +6% win after the kernels changed. Treat
+impossibility as a hypothesis and test it.
+
+**The freedom is in what you try. It is not in what counts as true.** That
+distinction is the whole reason you can be left running unattended:
+
+- Predict the mechanism and the magnitude in LEDGER.md *before* you measure.
+- A fresh-context critic measures every candidate: it gets the diff and no
+  narrative, and only its numbers enter the ledger. Subagent depth is capped at 1
+  here, so delegated work cannot spawn its own critic — you spawn it.
+- Log the failures. Roughly five in thirty land; a wave where eight of ten died
+  is a successful wave. A negative result written honestly is worth more than a
+  positive one nobody can reproduce.
+- 30 ends the run, which makes it the number most at risk of being manufactured.
+  It counts only when measured end-to-end on trunk after merges, quality gate
+  passing, reproduced at a second thermal state. A real 28.4 beats a 30 nobody
+  can reproduce.
+
+One GPU: build in parallel, measure one at a time through `bench/lock.sh`, and
+anything that loads the model takes the lock. When the machine is busy, run
+`bash bench/wait-for-env.sh`; when it times out, drain unmeasured work and wait
+again. Never stop.
+
+Do not narrate intent. If you write "next I will X", do X in the same turn. A
+session that ends on "I'll keep going" has stopped.
+
+Commit and push constantly. Keep LEDGER.md, RESUME.md and progress.html current.
+Keep going.
+```
+
+---
+
 ## Two-track push to 30
 
 ```
