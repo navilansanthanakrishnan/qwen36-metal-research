@@ -111,10 +111,12 @@ actually occur: same server config, `GGML_METAL_SGMV_NMIN` 4 vs 3, 14 frozen
 prompts at temperature 0, diff the completions, and trace any divergence to a
 near-tie below the NOISE.md threshold.
 
-**That check was launched and had not finished when the session ended.** The
-script is `scratchpad/qual.sh` (reproduced in the ledger discussion); outputs
-land as `gen_nmin4.json` / `gen_nmin3.json` with the verdict in `qual.log`.
-Re-run it before treating LEDGER 087 as verified.
+**That check RAN and PASSED: token-exact on 14/14 prompts** (LEDGER 090), ~2240
+generated tokens with no argmax flip — stronger than Class B requires. So 087
+has its quality evidence and needs only an independent critic. `narrow-tensor`
+still has none, but it is inert at production widths (zero narrow pipelines
+compile during a real speculative run), so there is nothing to verify until a
+configuration actually reaches ne11>=9.
 
 ## READ NEXT — the bound, and the only live lead (LEDGER 084/085/086)
 
