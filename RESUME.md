@@ -145,6 +145,26 @@ pass, i.e. the `ctx_other` route (llama-context.cpp:142) — a much larger chang
 whose correctness is not obvious, since the MTP block has its own recurrent and
 KV state that is genuinely separate from the target's.
 
+## THE EXIT CONDITION, AS ONE NUMBER (LEDGER 092)
+
+**40 tok/s requires a drafter with sustained per-step acceptance >= 0.84.**
+
+Solving `acc/fwd / (T_ver + D*t_draft) = 40` with the measured `T_ver(8)=110 ms`:
+at MTP's t_draft 6.7 ms and D=7 the requirement is per-step **0.929**; at 2.5 ms
+**0.866**; with a **free** drafter at 1 ms **0.839**. MTP measures 0.79 -> 0.62
+-> 0.40. So no amount of making drafting cheaper reaches 40 — the floor on the
+requirement is 0.84 and it is set by `T_ver`, which 084 showed is itself a floor.
+
+Independent draft models were the last untried mechanism class and they lose:
+0.6B -> 23.4, 1.7B -> 24.8, 4B -> 25.5, against MTP's 27.0. Cheap enough to
+draft deeply means too small to be accurate; MTP is conditioned on the target's
+hidden state and that is worth more than the speed.
+
+**What clears the bar is an EAGLE-3-class head** — hidden-state-conditioned,
+multi-layer, trained on the target's own output distribution. That is a training
+task, not a kernel task, and the invariant permits it because the target
+verifies every token.
+
 ## READ NEXT — the bound, and the only live lead (LEDGER 084/085/086)
 
 **082's plan was falsified by 084 — do not build a column-exact scalar kernel.**
