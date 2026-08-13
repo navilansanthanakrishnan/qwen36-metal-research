@@ -70,13 +70,18 @@ Measured today, from server timings (not inherited numbers):
     cycle     = 136-144 ms measured per prompt
     acc/fwd   = 3.05 (prose-01) .. 4.80 (codeedit-01), 3.738 aggregate
 
-Floors: `T_ver(8)` 61 ms, `t_draft` 4.8 ms (994 MiB head + MTP block at
-270.8 GB/s). At the floors with D=4 the cycle is 80 ms, which is **46.7 tok/s at
-today's acceptance** — so 40 is NOT acceptance-bound. It is cost slack:
-`T_ver(8)` is 1.82x its floor, `t_draft` 1.4x.
+**SUPERSEDED BY 084/085 — read those before using the floors above.** LEDGER 077
+took `T_ver(8)`'s floor to be the 61 ms weight stream and concluded 40 was cost
+slack, not acceptance-bound. That was wrong: it assumed the arithmetic could be
+made to overlap the stream, and 084 measured that the only efficient K-quant
+arithmetic on this chip runs at 5.07 TFLOP/s and cannot express fewer than 8
+columns. **The real floor is `T_ver(4..8) ~ 110 ms`, not 61**, and sgmv is
+already ~99% of the 8-column ideal.
 
-**What 40 needs, concretely:** cycle 137 -> ~125 ms (D=3 at the draft floor) and
-acc/fwd -> **~5.0**. Both terms move, as GOAL requires.
+Correct floors: `T_ver(8)` **110 ms**, `t_draft` 4.4 ms. Best achievable cycle
+~112 ms, so 40 needs acc/fwd **4.50** against today's 3.70 — i.e. it IS
+acceptance-bound after all, which is where 072 came out for the wrong reason.
+See the bound in 085 below.
 
 ## CURRENT LEVEL: 27.43 mean (LEDGER 088), was 25.93
 
