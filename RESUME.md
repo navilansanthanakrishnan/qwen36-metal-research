@@ -95,11 +95,14 @@ Mechanisms still untried for the activation-traffic gap (NFRAG is ruled out by
     cost. ggml's mul_mm already converts src1 to F16, so the precedent and the
     conversion path both exist. This is a loads reduction, the category that has
     won every time in this effort.
-  - Stage the src1 slice in threadgroup memory. All NSG simdgroups iterate the
-    SAME k-range and differ only in rows, so they read identical B -- one
-    cooperative load could serve four. Note this does NOT reintroduce mul_mm's
-    problem: mul_mm stages dequantized WEIGHTS (huge); this stages ACTIVATIONS
-    (8 KB per super-block).
+  - DONE, REJECTED (069): threadgroup-staged activations measured **-27%**
+    (T_ver(8) 110.1 -> 151.5). The cross-simdgroup redundancy is real but the
+    8 KiB slice was already cache-resident, so the reads were L1 hits; staging
+    only adds two barriers per super-block that serialise four previously
+    independent simdgroups. **This also weakens 066's diagnosis: removing 3/4
+    of the activation reads made it slower, so the 39 ms is instruction issue
+    or overlap, not bytes moved.** Do not retry with F16 staging either -- the
+    barrier cost dominates and halving the staged bytes does not touch it.
 
 **BIGGEST LEVER (LEDGER 066): the kernel's per-byte level, not its flatness.**
 `mul_mv` at width 1 = 232 GB/s; our kernel at widths 4-8 = 150 GB/s model-wide.
