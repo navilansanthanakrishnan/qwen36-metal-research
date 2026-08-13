@@ -118,6 +118,30 @@ still has none, but it is inert at production widths (zero narrow pipelines
 compile during a real speculative run), so there is nothing to verify until a
 configuration actually reaches ne11>=9.
 
+## SPECIFIED, NOT BUILT — fuse the catch-up decode with the first draft step
+
+Worth ~4.9% and nobody has looked at it. Per cycle the MTP path runs **1 catch-up
+decode + D draft decodes**, i.e. 5 full MTP forwards at 6.7 ms for D=4. The
+catch-up lives in `common_speculative_impl_draft_mtp::process()` and exists
+because `is_mem_shared` is false for qwen35, so the MTP block's own recurrent/KV
+state has to be advanced over the tokens the target just accepted.
+
+It is a separate forward from the first draft step only by construction. The
+catch-up batch covers positions up to `n_past-1`; `draft()` then decodes
+`dp.id_last` at `n_past` as its first step. **Append `id_last` to the catch-up
+batch and the logits at its position ARE the first draft token**, so step 1 of
+the draft loop disappears — 6.7 ms out of a ~137 ms cycle, Class A (scheduling
+only, token-exact), no kernel work.
+
+Check before building: confirm `id_last` is not already present in `batch_in`
+(if it is, the two decodes overlap by one position and the saving is different),
+and that the embedding shifting in `process()` — which memcpys `h_tgt` forward by
+one row — still lines up when the batch grows by one.
+
+Do NOT confuse this with sharing memory via `ctx_other`. The MTP block has its
+own state; adding qwen35 to that list (llama-context.cpp:142) is not obviously
+correct and is a different, larger change.
+
 ## READ NEXT — the bound, and the only live lead (LEDGER 084/085/086)
 
 **082's plan was falsified by 084 — do not build a column-exact scalar kernel.**
