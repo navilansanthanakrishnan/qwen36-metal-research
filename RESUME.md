@@ -3,7 +3,12 @@
 Working state for picking this up in a fresh context window. Overwrite freely —
 unlike LEDGER.md, this file is scratch.
 
-## STATUS 2026-08-13 (session 2): ~22.8 tok/s, target 40
+## STATUS 2026-08-13 (session 2): ~27 +/- 0.5 tok/s, target 40 — NOT reached
+
+Level was ~25.9 at session start and is ~27 now; see CURRENT LEVEL below for the
+configuration and LEDGER 089 for why the honest figure carries +/-0.5 (the
+six-category mean has ~2.4% run-to-run spread, so 088's +5.8% is a paired 2x2
+delta and must not be quoted as a level).
 
 Machine: AC, `iogpu.wired_limit_mb=20480` already applied, throttle 0.1%, lock
 free. Re-apply the sysctl after any reboot before quoting absolute numbers.
