@@ -73,7 +73,25 @@ today's acceptance** — so 40 is NOT acceptance-bound. It is cost slack:
 **What 40 needs, concretely:** cycle 137 -> ~125 ms (D=3 at the draft floor) and
 acc/fwd -> **~5.0**. Both terms move, as GOAL requires.
 
-## READ FIRST — the bound, and the only live lead (LEDGER 084/085/086)
+## CURRENT LEVEL: 27.43 mean (LEDGER 088), was 25.93
+
+Best configuration measured this session, on branch `tree-sim`:
+
+    GGML_METAL_SGMV_NMIN=3   (now the default on that branch)
+    --spec-draft-p-min 0.4   (llama.cpp default is 0)
+    plus the frozen config: --spec-draft-n-max 7, MTP_MAX=4, EXT_N=3, RS_SEQ=3
+
++5.8% over baseline, verified as a 2x2 so the two changes could not be the same
+effect counted twice — the gate is +1.5% at both p_min settings and p_min is
++4.2% at both gate settings, no interaction. Concentrated in prose-02 (+25.1%),
+prose-01 (+7.2%), longctx (+7.0%).
+
+**Both still need a fresh-context critic and `bench/quality.sh` before they are
+KEEPs outright.** `p_min` cannot change output (the target verifies every draft
+token) but the gate is Class B — it changes which kernel instantiation runs.
+`test-backend-ops` MUL_MAT q4_K is 3/3.
+
+## READ NEXT — the bound, and the only live lead (LEDGER 084/085/086)
 
 **082's plan was falsified by 084 — do not build a column-exact scalar kernel.**
 `probe/scmv.m` is written, correct at every shape, and 3.4x off sgmv on
