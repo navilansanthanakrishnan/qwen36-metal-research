@@ -91,11 +91,15 @@ no change to drafting or acceptance.** Cause is activation-read traffic (838 MB
 of B against 112 MB of weights at M=40960, per 038).
 
 NEXT, in order:
-  1. NFRAG=2 for Q6_K and Q5_K (32.6% of weight bytes, still at one fragment).
-     Q4_K's NFRAG=2 was +3.9%; these should behave the same way.
-  2. Then NFRAG=4 for Q6_K only -- shrey found Q6_K has the register room
-     because it reads its int8 scales inline, where Q4_K/Q5_K hoist four scales
-     into 8*nr0 registers and have none spare.
+  1. DONE, REJECTED (067): NFRAG=2 for Q6_K measured **-4.6%** (T_ver(8)
+     110.1 -> 115.4), the opposite of Q4_K's +3.9%. Q6_K decodes its int8
+     scales inline where Q4_K hoists them, so a second fragment costs register
+     pressure that outweighs the halved B traffic. Do not retry, and do not
+     try NFRAG=4 for Q6_K on shrey's reasoning -- his nr0 result was for a
+     different kernel that stages through threadgroup memory.
+  2. Q5_K at NFRAG=2 is untested (6.1% of bytes). Q5_K hoists scales like
+     Q4_K, so it may behave like Q4_K rather than Q6_K -- but it is only 6.1%,
+     so cap the expectation near +0.4%.
   3. Re-measure T_ver(8) after each; the target is 110.1 -> ~85 ms.
 
 Old note: **THE DRAFT STEP IS THE TARGET: 11.5 ms x 5 = 57.5 ms of a 167.6 ms cycle.**
