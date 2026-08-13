@@ -18,3 +18,6 @@ bench/sgprobe
 # asset symlinks: weights and run output live outside the source tree
 models
 runs
+
+# training venv — tooling, never committed (GOAL: nothing large in the source tree)
+.venv-train/

@@ -174,6 +174,43 @@ prefill a 1M-token corpus is ~55 min and ~20 GB. The long pole is training to
 >= 0.84 sustained acceptance, then GGUF conversion and adding the arch to
 llama.cpp's graph code. Multi-session, and the only remaining route to 40.
 
+## THE PLAN — EAGLE-class draft head (STARTED, LEDGER 093/094)
+
+This is the only remaining route to 40 and GOAL assigns the decision to me, so it
+is started rather than queued. Target: **sustained per-step acceptance >= 0.84**
+(092). Everything cheaper is closed with a measurement.
+
+**Step 0 — interpreter + torch. LAUNCHED in background this session.**
+`brew install python@3.12`, then a venv at `.venv-train` with torch (MPS).
+Progress/result in `/tmp/brewpy.log`; look for `DONE` and the torch version line.
+Reverses with `rm -rf .venv-train` and `brew uninstall python@3.12`. Does not
+touch the GPU or the frozen measurement surface, so the baseline stands.
+
+**Step 1 — training data.** For each corpus position t: the target's last-layer
+hidden state `h_t` and the token at t+1. **`h_t` is already exposed** — it is
+exactly what `llama_get_embeddings_nextn()` hands the MTP head
+(`common/speculative.cpp`), so no new forward path is needed, only a dump tool.
+At the measured 306 tok/s prefill, 1M tokens is ~55 min and ~20 GB of f32; write
+to `~/projects/assets/runs/qwen36-metal/eagle/`, never into the source tree.
+Corpus: `runs/corpus/wikitext-2-raw` exists, but 061 is the warning — a ranking
+built from wikitext missed code and JSON entirely. Use a mixed corpus, and note
+that unlike FR-Spec this trains on the *proposal* target (next token), so the
+061 failure mode does not transfer directly.
+
+**Step 2 — train.** ~1 decoder layer at n_embd 5120, ~0.4B params, reusing the
+target's embedding and LM head (do not train those). Loss on next-token given
+`h_t`. Validate on **held-out per-step acceptance against the real target**, not
+on loss — 092's threshold is 0.84 sustained and loss does not tell you that.
+
+**Step 3 — integrate.** GGUF conversion plus an arch entry in llama.cpp's graph
+code so it drives the existing speculative path. `--spec-type draft-mtp` already
+does chained heads (`chain_heads`, `n_mtp_layers`), so the drafting loop may need
+little change.
+
+**Kill criteria.** If held-out sustained acceptance stalls below ~0.80 after a
+reasonable training budget, 40 is not reachable on this machine and the honest
+answer is the ~33 ceiling of 085. Record it and stop.
+
 ## READ NEXT — the bound, and the only live lead (LEDGER 084/085/086)
 
 **082's plan was falsified by 084 — do not build a column-exact scalar kernel.**
