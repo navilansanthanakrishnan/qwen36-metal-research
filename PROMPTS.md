@@ -168,6 +168,62 @@ Keep going.
 
 ---
 
+## Two-track push to 30
+
+```
+Read GOAL.md, then RESUME.md, the tail of LEDGER.md, LEADS.md, BASELINE.md and
+NOISE.md. Act on what those files say, not on what you remember.
+
+You are at 23.76 tok/s. **You stop at 30 tok/s decode and nothing else ends this
+run.** Verified means measured end-to-end on trunk after merges, by a
+fresh-context critic, quality gate passing, reproduced at a second thermal state.
+
+The arithmetic you are working against: cycle 160.5 ms — verify 114.4, drafting
+46.1 — at 3.814 accepted tokens per forward pass. 30 tok/s needs a 127 ms cycle.
+So roughly 33 ms comes out, or acceptance goes up. Both are open.
+
+Run two persistent tracks as subagents:
+
+- **decode** — acceptance rate, the 9.2 ms draft step, the 1 GB output-head read
+  at width 1, the host round trip qwen35 pays for not being on the `ctx_other`
+  sharing list, draft depth and stopping policy.
+- **prefill** — the verify pass is prefill-shaped, so every millisecond off wide
+  mat-mul is a millisecond off the 114.4. Tiles, fusion, the matrix-unit path,
+  graph and dispatch overhead.
+
+You orchestrate. Subagent depth is capped at 1 on this machine, so the track
+agents cannot spawn their own critics — **you** spawn a fresh-context critic per
+candidate, hand it the diff and nothing else, and only its numbers reach the
+ledger.
+
+One GPU. The tracks build in parallel and measure one at a time through
+`bench/lock.sh`; anything that loads the model takes the lock. When the machine
+is busy run `bash bench/wait-for-env.sh`, and when it times out drain unmeasured
+work — implement the next candidate, run the clock-independent correctness
+checks, read, diff against `shrey/shipped` — then wait again. Never stop.
+
+Read the literature and then test it: speculative decoding variants, drafting
+policy, wide-batch GEMM on Apple silicon. Every paper exits as a ranked LEADS.md
+entry with a mechanism, a predicted magnitude for this chip, and a falsifying
+experiment — then gets run.
+
+Take initiative and do not accept impossibility. Ledger 052 says 35 was
+unreachable *at that acceptance* — a statement about one configuration, not a
+law. This project has already overturned exactly that kind of conclusion once:
+depth 3 was measured as a loss and closed, and became a +6% win after the
+width-gated kernels landed. You have a calibrated rig, a quality oracle and 61
+entries of ground truth, which is the apparatus that makes an unreasonable idea
+cheap to test and safe to be wrong about. Test impossibility; never assert it.
+
+Do not narrate intent. If you write "next I will X", do X in the same turn. A
+session that ends on "I'll keep going" has stopped.
+
+Commit and push constantly. Keep LEDGER.md, RESUME.md and progress.html current.
+Keep going.
+```
+
+---
+
 ## Resume — every session after
 
 ```
