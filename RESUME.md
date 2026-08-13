@@ -89,8 +89,15 @@ free under overlap; T_ver(8)=110.1 is **1.81x its floor**. The gap is overlap
 and activation traffic, not column cost. Ladder at today's drafting/acceptance:
 T_ver(8) 95 -> 24.5 tok/s, 85 -> 26.2, 71.1 -> 29.1.
 
-Mechanisms still untried for the activation-traffic gap (NFRAG is ruled out by
-067, per type):
+**FOUR MECHANISMS HAVE NOW FAILED ON THIS KERNEL (067, 069, 070, and F16 by
+069's argument). Read this before attempting a fifth.** It sits at 170 GB/s
+against a 212.9 GB/s loads-only ceiling for its own access pattern (80%), and
+every hand intervention has moved it backwards, usually via register pressure.
+The 1.81x-above-roofline gap of 068 is real but is not reachable by tuning this
+structure. A fifth tweak is not the move; a different design, or the drafting
+side, is.
+
+Superseded list of mechanisms (kept for the record):
   - Read src1 as F16 rather than F32. Halves activation BYTES with no register
     cost. ggml's mul_mm already converts src1 to F16, so the precedent and the
     conversion path both exist. This is a loads reduction, the category that has
