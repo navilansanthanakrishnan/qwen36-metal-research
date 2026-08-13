@@ -197,6 +197,21 @@ it doubles as the correctness check described in Track 6's T6-6).
 
 ## Needs Navilan (do not block on it)
 
+### GPU WIRED LIMIT — costs throughput AND makes the level unmeasurable
+
+`sysctl iogpu.wired_limit_mb` reads **0** (unset), so the GPU working set is the
+18186 MiB driver default. A 15.9 GiB model leaves ~2.2 GiB for KV, recurrent
+state, graph buffers and the draft context, and **every measured arm swaps**
+(222-13000 pages). That is the most likely source of the 34% within-arm spread
+in LEDGER 063, which is what currently makes any absolute number unquotable.
+
+```bash
+sudo sysctl iogpu.wired_limit_mb=20480
+```
+
+`sudo -n` was tried once and refused; nothing is parked anywhere. It resets on
+reboot. This is the single highest-value thing a human can do for this rig.
+
 ### AC POWER — blocks all timing measurement
 
 At 2026-08-12 07:53Z the machine was **on battery** (98%, discharging) and
