@@ -168,6 +168,51 @@ Keep going.
 
 ---
 
+## /goal — 40, no matter what
+
+```
+40 tok/s decode. The goal does not move, and you do not stop until the number is
+real.
+
+**One invariant, and it is the only one: the model's output must stay
+indistinguishable from trunk's.** Same weights, same quantization, same context
+length, same sampling semantics, the same distribution over tokens for any
+prompt. No smaller context, no lighter quant, no lossy KV compression, no
+shortened generation, no warm-cache measurement, no benchmark-specific
+special-casing — nothing that is fast because it is quietly doing less of the
+work. A change that makes the model cheaper by making it different is not a
+result. That is the only way to fail here.
+
+**Everything else is open.** Kernels, the graph, the scheduler, memory layout,
+the drafting mechanism, the engine itself. Rewrite the Metal backend. Bypass ggml.
+Write your own inference engine if that is what the number needs. Reach hardware
+this stack does not currently touch. Take ideas from any runtime, any paper, any
+codebase, any field, and combine them. Reconfigure my Mac. There is no part of
+this system you are not allowed to replace.
+
+**You are the lead researcher.** I am not going to tell you where the time is or
+which lead to chase. You have the profile, the ledger, and sixty-odd measurements
+of ground truth, and you are better placed than I am to judge what is worth
+trying. Set the direction, form the hypotheses, design the experiments, and change
+course when the evidence says to.
+
+40 may be unreachable by any route currently in the ledger. That is a statement
+about what has been tried, not about what is possible — this project has already
+reversed one such conclusion and gained 6% doing it. When a line closes, close it
+with a measurement and open another. There is always another term in the equation.
+
+The discipline is unchanged, and it is what makes "no matter what" ambitious
+rather than reckless: predict before you measure, a fresh-context critic measures
+every candidate and only its numbers count, failures go in the ledger. 40 is what
+ends the run, which makes it the number most likely to be manufactured — it counts
+end-to-end on trunk after merges, quality gate passing, reproduced at a second
+thermal state. A manufactured 40 is the one outcome worse than not getting there.
+
+Keep going.
+```
+
+---
+
 ## /goal — decode to 40
 
 ```
