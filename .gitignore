@@ -21,3 +21,7 @@ runs
 
 # training venv — tooling, never committed (GOAL: nothing large in the source tree)
 .venv-train/
+
+# compiled probes — build them from source, see probe/README.md
+probe/mmapeak
+probe/scmv
