@@ -3,7 +3,18 @@
 Working state for picking this up in a fresh context window. Overwrite freely —
 unlike LEDGER.md, this file is scratch.
 
-## STATUS 2026-08-12 (final): 21.66 tok/s measured, target 30 — NOT reached
+## STATUS 2026-08-12 (final): ~22.3 tok/s steady-state, target 30 — NOT reached
+
+LEDGER 064: six-pair mean **23.0101** with the cold first pair, **~22.3
+steady-state** without it. Config: depth 7, `LLAMA_ARG_SPEC_MTP_MAX=4`,
+`LLAMA_ARG_SPEC_EXT_N=3`, `LLAMA_ARG_SPEC_N_RS_SEQ=3` -- verified +7.4% over a
+minimal-memory config, so the memory it costs is earned.
+
+**How to read this rig (064):** discard pair 1, it is a cold-cache outlier that
+always reads high. Treat any arm with swap > ~2000 pages as measuring memory
+pressure, not the change under test. With swap quiet the spread is 0.5%, so the
+level IS measurable -- 063's claim that it carries +/-15% was itself an artifact
+of a swap-heavy run.
 
 LEDGER 063: the headline re-measured end-to-end is **21.6594** (upstream arm
 14.3320, +51.1%, p=0.0312). The 23.76 quoted since LEDGER 050 **does not
