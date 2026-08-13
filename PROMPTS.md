@@ -168,6 +168,62 @@ Keep going.
 
 ---
 
+## /goal — decode to 40
+
+```
+Target is 40 tok/s decode. Everything in GOAL.md still stands.
+
+Know what 40 costs before you plan it. At today's 3.814 accepted tokens per
+forward pass it needs a 95 ms cycle, and verify alone is 114.4 ms — so 40 is
+unreachable by making drafting free. It is the same wall ledger 052 found at 35,
+one step further out. Two terms can move it:
+
+- **The 71.1 ms width-1 verify floor.** Width 5 to 8 now costs 3.2 ms, so the
+  matmuls are finished. What remains is the gated-delta-net recurrence across 48
+  layers, attention and norms — untouched, and now the largest single item in the
+  cycle.
+- **Acceptance.** At the current 160.5 ms cycle, 40 tok/s means 6.42 accepted
+  tokens per forward pass instead of 3.814.
+
+Neither alone is obviously enough. Together they are. That is the shape of the
+problem; the route is yours to find.
+
+**When you hit a wall, the wall is usually a term you have been treating as
+constant.** List what you have been holding fixed and work out which of them is
+actually load-bearing: a single draft head, MTP as the only drafting mechanism,
+one draft per step, linear rather than tree drafting, greedy verification, the
+draft coming from this model at all, batch 1, the layer split, what the recurrence
+recomputes every step. Some are frozen for good reasons. Some are frozen because
+nobody asked. Find out which is which — that is the research, and it is where the
+next order of magnitude lives rather than in another kernel.
+
+Go wide for ideas, and be specific about where you look. Papers on speculative and
+parallel decoding, tree attention, draft distillation, state-space inference.
+Other runtimes — MLX, vLLM, SGLang, TensorRT-LLM, tinygrad, ik_llama.cpp — for
+things nobody has ported to Metal. Apple's own frameworks for hardware ggml does
+not reach. Then combine them: most of the real gains here will come from two known
+ideas meeting for the first time, not from one new idea arriving. Identify the
+studies worth running, and run them.
+
+Invent. You have a rig that can falsify an idea in an hour and a quality oracle
+that stops a wrong one from being believed. That apparatus is exactly what makes
+an unreasonable idea cheap to test — which is the argument for trying things that
+would be reckless without it, not the argument for caution.
+
+Do not stop at a wall, reframe it. A closed lead is closed against a
+configuration, not forever; this project has already reopened one and gained 6%.
+If a line is genuinely exhausted, write the measurement that closed it in the
+ledger and go attack a different term in the equation. There is always another
+term.
+
+Everything still enters the ledger the same way — prediction before measurement,
+critic numbers only, failures logged. 40 is what ends the run, which makes it the
+number most likely to be manufactured: end-to-end on trunk after merges, quality
+clean, reproduced.
+```
+
+---
+
 ## Decode to 30 — lead-researcher continuation
 
 ```
