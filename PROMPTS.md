@@ -314,8 +314,8 @@ Keep going.
 ```
 Target is 40 tok/s decode. Everything in GOAL.md still stands.
 
-Know what 40 costs before you plan it. At today's 3.814 accepted tokens per
-forward pass it needs a 95 ms cycle, and verify alone is 114.4 ms — so 40 is
+Know what 40 costs before you plan it. At today's 3.70 accepted tokens per
+forward pass it needs a 92 ms cycle, and verify alone is 110 ms — so 40 is
 unreachable by making drafting free. It is the same wall ledger 052 found at 35,
 one step further out. Two terms can move it:
 
@@ -323,8 +323,9 @@ one step further out. Two terms can move it:
   matmuls are finished. What remains is the gated-delta-net recurrence across 48
   layers, attention and norms — untouched, and now the largest single item in the
   cycle.
-- **Acceptance.** At the current 160.5 ms cycle, 40 tok/s means 6.42 accepted
-  tokens per forward pass instead of 3.814.
+- **Acceptance.** At the current ~137 ms cycle, 40 tok/s means 5.48 accepted
+  tokens per forward pass instead of 3.70. LEDGER 092 sharpens this: the binding
+  form is sustained per-step acceptance >= 0.84, and T_ver is itself a floor.
 
 Neither alone is obviously enough. Together they are. That is the shape of the
 problem; the route is yours to find.
@@ -371,11 +372,11 @@ clean, reproduced.
 Read GOAL.md, then RESUME.md, the tail of LEDGER.md, LEADS.md, BASELINE.md and
 NOISE.md. Act on what those files say, not on what you remember.
 
-Decode only this run. You are at 23.76 tok/s. **You stop at 30 and nothing else
+Decode only this run. You are at ~27 tok/s. **You stop at 40 and nothing else
 ends this run.**
 
-The cycle is 160.5 ms at 3.814 accepted tokens per forward pass — verify 114.4,
-drafting 46.1. 30 tok/s needs 127 ms. So ~33 ms comes out, or acceptance rises,
+The cycle is ~137 ms at 3.70 accepted tokens per forward pass — verify 110,
+drafting 27. 40 tok/s needs 92 ms. So ~45 ms comes out, or acceptance rises,
 or both. Everything inside that cycle is yours: acceptance rate, draft depth and
 stopping policy, the 9.2 ms draft step, the 1 GB output-head read at width 1, the
 host round trip qwen35 pays for not being on the `ctx_other` sharing list, and the
@@ -425,12 +426,12 @@ Keep going.
 Read GOAL.md, then RESUME.md, the tail of LEDGER.md, LEADS.md, BASELINE.md and
 NOISE.md. Act on what those files say, not on what you remember.
 
-You are at 23.76 tok/s. **You stop at 30 tok/s decode and nothing else ends this
+You are at ~27 tok/s. **You stop at 40 tok/s decode and nothing else ends this
 run.** Verified means measured end-to-end on trunk after merges, by a
 fresh-context critic, quality gate passing, reproduced at a second thermal state.
 
-The arithmetic you are working against: cycle 160.5 ms — verify 114.4, drafting
-46.1 — at 3.814 accepted tokens per forward pass. 30 tok/s needs a 127 ms cycle.
+The arithmetic you are working against: cycle ~137 ms — verify 110, drafting
+27 — at 3.70 accepted tokens per forward pass. 40 tok/s needs a 92 ms cycle.
 So roughly 33 ms comes out, or acceptance goes up. Both are open.
 
 Run two persistent tracks as subagents:
@@ -439,7 +440,7 @@ Run two persistent tracks as subagents:
   at width 1, the host round trip qwen35 pays for not being on the `ctx_other`
   sharing list, draft depth and stopping policy.
 - **prefill** — the verify pass is prefill-shaped, so every millisecond off wide
-  mat-mul is a millisecond off the 114.4. Tiles, fusion, the matrix-unit path,
+  mat-mul is a millisecond off the 110. Tiles, fusion, the matrix-unit path,
   graph and dispatch overhead.
 
 You orchestrate. Subagent depth is capped at 1 on this machine, so the track
