@@ -83,7 +83,18 @@ Ranking file so far: `runs/frspec/rank-wikitrain.txt` (full 248320-id
 permutation, frequency-ranked prefix). Still unread from his stack: B-nr1,
 E-gdnfusion, N_R0_Q5_K_R1=2.
 
-**The 9.2 ms draft step is the other lever.** It splits into
+**THE DRAFT STEP IS THE TARGET: 11.5 ms x 5 = 57.5 ms of a 167.6 ms cycle.**
+30 tok/s needs the cycle at 124.6 ms, so 43 ms must come out and drafting holds
+57.5 of it. 065 ruled out the output head's *shape* as the cause (the probe hits
+170.9 GB/s on 248320x5120, same as every other shape), so the excess is the
+width-1 path or per-step overhead. FR-Spec proved 7-9.6 ms/step is genuinely
+removable -- it just cost more acceptance than it saved.
+
+Untried and cheap: extend the sgmv gate to width 1-3 and measure whether the
+register-resident path beats `mul_mv` at width 1 on the LM head (it is
+bandwidth-bound in theory, but 065 says the observed cost is ~2x that).
+
+Old note: **The 9.2 ms draft step is the other lever.** It splits into
 ~4.3 ms for the 1 GB output head (at width 1 it is already at the 230 GB/s the
 hardware gives, so only reading fewer bytes helps -- a draft-only vocabulary
 restriction is quality-neutral because the target verifies every token, and
