@@ -4,9 +4,14 @@ The research half of an effort to make one model decode faster on one machine:
 **Qwen3.6-27B-Q4_K_M** on a binned **M5 Pro** — 16 GPU cores, 24 GiB unified
 memory. Context stays at 4096 and the quantization is never changed.
 
-Decode went from **14.567 tok/s to 23.76 tok/s (1.63×)**. The target was 35 and
-has not been reached; [LEDGER.md](LEDGER.md) records why, entry by entry,
-including the failures.
+Decode went from **14.567 tok/s to ~27 tok/s (1.85×)**, measured as the mean over
+the frozen prompt set. The target is **40** and has not been reached;
+[LEDGER.md](LEDGER.md) records why, entry by entry, including the failures — and
+the failures are most of it.
+
+The remaining gap is now a single falsifiable number rather than a direction:
+**40 requires a drafter with sustained per-step acceptance ≥ 0.84**, against the
+MTP head's measured 0.79 → 0.62 → 0.40 (LEDGER 092).
 
 The kernels and llama.cpp changes live in the implementation repo:
 **[llama.cpp-qwen3.6-m5](https://github.com/navilansanthanakrishnan/llama.cpp-qwen3.6-m5)**
@@ -17,9 +22,16 @@ evidence.
 
 | | before | after |
 |---|---|---|
-| decode, MTP speculative | 14.567 tok/s | **23.76 tok/s** |
-| width-8 verification | 215.2 ms | **110.4 ms** |
-| Q4_K mat-vec, m=4096 k=14336, n=8 | 510 µs | **235 µs** |
+| decode, MTP speculative (6-category mean) | 14.567 tok/s | **~27 tok/s** |
+| width-8 verification | 215.2 ms | **110 ms** |
+| width-3 verification | 129.5 ms | **107.4 ms** |
+| Q4_K mat-vec, m=4096 k=14336, n=8 | 510 µs | **229 µs** |
+
+Per category the spread is wide and it is entirely acceptance: json-01 reaches
+**38.1 tok/s** and longctx-01 **17.9**, at a cycle that varies by under 5%. A
+single absolute number from this rig carries about ±2.4%, so paired A/B deltas
+are quoted as deltas and never as levels — LEDGER 063 and 089 are both
+corrections of exactly that mistake.
 
 Decode at one token per forward pass is capped at **16.40 tok/s** — 16.5 GB of
 weights over 270.8 GB/s of measured bandwidth. Everything above that line comes
@@ -40,7 +52,8 @@ LEADS.md       ranked hypotheses, most now closed by measurement
 RESUME.md      working state for picking the effort back up
 progress.html  a dashboard of the above
 
-bench/         the measurement harness (see below)
+bench/         the measurement harness, frozen (see below)
+probe/         standalone Metal probes added alongside it, never frozen
 prompts/       14 frozen prompts across 5 categories, with a manifest
 quality/       the quality oracle: greedy references, perplexity, KLD
 ```
@@ -78,6 +91,13 @@ taken. The rules, and the scripts that enforce them:
 - **`bench/bwprobe/`, `bench/gpuinfo/`, `bench/sgmap.m`** — the machine-truth
   probes: attained bandwidth, GPU clock and throttle, and the empirical recovery
   of the simdgroup matrix lane→element layout.
+- **`probe/mmapeak.m`** — peak arithmetic throughput of each matrix path with
+  zero memory traffic. This is the probe that overturned the effort's inherited
+  roofline: `simdgroup_float8x8` runs at **6.1 TFLOP/s**, the same as scalar
+  fp32 fma, not the 17.6 assumed since LEDGER 035.
+- **`probe/scmv.m`** — a column-exact scalar multi-column Q4_K mat-vec, built to
+  test whether verify could do only the columns it needs. Correct at every shape
+  and 3.4× off the simdgroup kernel; the negative is the result (LEDGER 084).
 
 The minimum detectable effect is **3.0%**, established by a null test (two
 identical arms, which must report no difference) and a positive control (a
@@ -136,7 +156,17 @@ A few entries worth reading on their own:
 - **038** — the kernel's progression from 68 to 170 GB/s, and the measured
   loads-only ceiling of 213 GB/s that bounds it.
 - **041, 052** — the speculative cost model, solved from measurements, and what
-  it says 35 tok/s actually requires.
+  it says the target actually requires.
+- **074** — `simdgroup_float8x8` measured at 6.1 TFLOP/s against a scalar-fma
+  control. LEDGER 035 had *assumed* 17.6 and every roofline since inherited it;
+  this retroactively explains four consecutive failed kernel experiments.
+- **080** — tree drafting, the mechanism this effort had named as the missing
+  piece since 052, falsified in half an hour from a per-position acceptance
+  counter the server was already keeping.
+- **084** — a column-exact scalar verify kernel, built and measured, refuting
+  the plan proposed two entries earlier in the same session.
+- **090** — why `bench/quality.sh` is *blind* to a kernel that only runs under
+  speculation, and what the honest check is instead.
 - **054** — a correction: width-scaling is matmul, not the gated-delta-net
   recurrence, which I had attributed it to.
 - **057, 058** — a frequency-ranked draft vocabulary that works mechanically

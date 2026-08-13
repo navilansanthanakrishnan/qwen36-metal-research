@@ -4,9 +4,32 @@ Every entry carries: the claim, the evidence, the predicted mechanism, a rough
 predicted magnitude, and the cheapest experiment that would falsify it. An
 unranked list of ideas is not a dossier, so the ranking is the point.
 
-**Nothing here has been tried.** This is Phase H output: what to do next and in
-what order, with the reasoning attached so the next phase can disagree with it
-on evidence rather than on vibes.
+> **STATUS — most of this dossier is now closed by measurement.** It was written
+> as Phase H output, before anything had been tried, and the header below said so
+> for a long time after that stopped being true. Read this block first; the
+> ranking that follows is preserved as written, because how the priorities were
+> chosen is part of the evidence, but do not treat it as a to-do list.
+
+| track / lead | closed by | verdict |
+|---|---|---|
+| L1 draft depth staircase | LEDGER 041, and the per-position profile in 080 | depth is at its optimum; deeper is ~break-even |
+| L2 ngram / prompt-lookup drafting | 048, 049, 051 | kept as the *union extension*, at its ceiling |
+| L5 draft depth + stopping rule | **086** | `p_min` had never been swept; no single constant suits all categories |
+| L6 draft step re-reads the LM head | 057, 058, **061** | FR-Spec closed on three rankings — the trim must cover what the draft *proposes* |
+| Tree drafting | **080** | falsified: negative in aggregate, −19% on json |
+| Track 4 — Metal tensor API | **074, 075, 078** | the units are real (16.4 TFLOP/s) but dequant-to-threadgroup costs more than it saves at verify widths |
+| Track 5 — mul_mv template params | **083** | 18-point sweep; the existing defaults are already the best point |
+| Narrow-N `mul_mm` tile | 034, **076** | loses at ne11 ≤ 8, wins 1.8× at ne11 ≥ 9 where a 3× cliff lives |
+| Column-exact scalar verify | **084** | built and measured; 3.4× off the simdgroup kernel |
+| The drafter itself | **092** | independent draft models lose at every size |
+
+**What the dossier could not have known**, and what supersedes its arithmetic:
+`simdgroup_float8x8` runs at **6.1 TFLOP/s**, not the 17.6 LEDGER 035 assumed
+(measured in 074 via `probe/mmapeak.m`). Every ranking below that leans on the
+higher figure is ranking against a ceiling that does not exist.
+
+**The one open lead** is not in this file: 40 tok/s requires a drafter with
+sustained per-step acceptance **≥ 0.84** (092). See `RESUME.md`.
 
 ---
 
