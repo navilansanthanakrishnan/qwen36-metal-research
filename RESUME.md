@@ -118,29 +118,32 @@ still has none, but it is inert at production widths (zero narrow pipelines
 compile during a real speculative run), so there is nothing to verify until a
 configuration actually reaches ne11>=9.
 
-## SPECIFIED, NOT BUILT — fuse the catch-up decode with the first draft step
+## CLOSED BY CODE READING — do NOT try to fuse the catch-up decode
 
-Worth ~4.9% and nobody has looked at it. Per cycle the MTP path runs **1 catch-up
-decode + D draft decodes**, i.e. 5 full MTP forwards at 6.7 ms for D=4. The
-catch-up lives in `common_speculative_impl_draft_mtp::process()` and exists
-because `is_mem_shared` is false for qwen35, so the MTP block's own recurrent/KV
-state has to be advanced over the tokens the target just accepted.
+I specified this as a ~4.9% Class A win and it is **not implementable as stated**;
+the correction is here so the next session does not spend a build on it.
 
-It is a separate forward from the first draft step only by construction. The
-catch-up batch covers positions up to `n_past-1`; `draft()` then decodes
-`dp.id_last` at `n_past` as its first step. **Append `id_last` to the catch-up
-batch and the logits at its position ARE the first draft token**, so step 1 of
-the draft loop disappears — 6.7 ms out of a ~137 ms cycle, Class A (scheduling
-only, token-exact), no kernel work.
+Per cycle the MTP path runs 1 catch-up decode + D draft decodes, 5 full MTP
+forwards at 6.7 ms for D=4. The catch-up lives in
+`common_speculative_impl_draft_mtp::process()`. The idea was to append `id_last`
+to its batch so the logits at that position become the first draft token,
+removing one forward.
 
-Check before building: confirm `id_last` is not already present in `batch_in`
-(if it is, the two decodes overlap by one position and the saving is different),
-and that the embedding shifting in `process()` — which memcpys `h_tgt` forward by
-one row — still lines up when the batch grows by one.
+**It cannot work.** `common_speculative_process()` is called from
+`server-context.cpp:3719`, which is **after** the target's `llama_decode` but
+**before** sampling. `id_last` is the token the target is about to sample and
+does not exist yet at that point, so it cannot be in the catch-up batch.
 
-Do NOT confuse this with sharing memory via `ctx_other`. The MTP block has its
-own state; adding qwen35 to that list (llama-context.cpp:142) is not obviously
-correct and is a different, larger change.
+Two things worth keeping from the reading. Upstream already flags the replay as
+redundant — see the TODO tagged `[TAG_SPEC_AVOID_DRAFT_REEVAL]` immediately above
+that call, "always re-evaluate for simplicity" — but the saving it describes
+(replaying only the accepted prefix instead of the whole batch) is worth
+**nothing here**, because the MTP forward is flat in width exactly like the
+target's, so replaying 8 tokens costs what replaying 3 does. And eliminating the
+catch-up outright needs the MTP block's state to advance during the target's own
+pass, i.e. the `ctx_other` route (llama-context.cpp:142) — a much larger change
+whose correctness is not obvious, since the MTP block has its own recurrent and
+KV state that is genuinely separate from the target's.
 
 ## READ NEXT — the bound, and the only live lead (LEDGER 084/085/086)
 
