@@ -73,7 +73,41 @@ today's acceptance** — so 40 is NOT acceptance-bound. It is cost slack:
 **What 40 needs, concretely:** cycle 137 -> ~125 ms (D=3 at the draft floor) and
 acc/fwd -> **~5.0**. Both terms move, as GOAL requires.
 
-## NEXT — a scalar 4-column mat-vec. NOT trees, NOT wider verify.
+## READ FIRST — the bound, and the only live lead (LEDGER 084/085/086)
+
+**082's plan was falsified by 084 — do not build a column-exact scalar kernel.**
+`probe/scmv.m` is written, correct at every shape, and 3.4x off sgmv on
+arithmetic efficiency (1.5 vs 5.07 TFLOP/s), because one MMA retires 512 MACs
+where a scalar fma retires 32 per simdgroup. `T_ver(4..8) ~ 110 ms is a floor`
+and sgmv is already ~99% of the 8-column ideal.
+
+**The bound (085):** with drafting at its 4.4 ms floor and perfect MMA/stream
+overlap, the mean over the six frozen categories is **32.8 tok/s** — json 47.4,
+codeedit 42.6, prose 24, longctx 21. 40 aggregate needs acc/fwd **4.50** against
+today's 3.70, and trees (080), depth (041), FR-Spec (061), the tensor path (078)
+and column-exact verify (084) are all closed by measurement. **40 is reachable
+per-category on structured content, not in aggregate**, unless a better drafter
+appears. The invariant permits any drafter — the target verifies every token —
+so this is a draft-quality problem, not a kernel one.
+
+**The live lead: the draft early-stop threshold is mistuned (086).** `p_min`
+defaults to 0 and no one has ever swept it. It is a pure policy knob, output
+identical, no code change. Measured means over six categories: **0 -> 25.80,
+0.4 -> 26.43, 0.75 -> 26.26**, and the per-category envelope is **27.4**.
+longctx-01 goes **16.71 -> 21.46 (+28%)** at 0.75 while json prefers 0.4. So one
+global constant is wrong for every category and an **adaptive controller** is
+worth ~6%. The right rule is `continue while p > acc * t_draft / cycle`
+(~0.18 today), but the draft's reported confidence is not calibrated to actual
+acceptance — so drive it off the running per-position acceptance the server
+already tracks (`n_accepted_per_pos`, exposed by `-lv 5`).
+
+Second-order but real: early stopping makes short drafts common, and a draft of
+2 verifies at **width 3, which costs 134.9 ms — worse than width 8's 111**,
+because the sgmv gate starts at ne11>=4 and below it K-quants fall back to a
+kernel that re-streams all 16.52 GB per column. `GGML_METAL_SGMV_NMIN=3` on
+branch `tree-sim` tests lowering the gate; built, not yet measured.
+
+## SUPERSEDED — a scalar 4-column mat-vec
 
 **Tree drafting is dead (080) and wider verify is dead (079/082). The direction
 is a NARROWER, cheaper verify.** Read LEDGER 080-083 before doing anything.
