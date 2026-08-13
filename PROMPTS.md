@@ -168,6 +168,60 @@ Keep going.
 
 ---
 
+## Fresh session — start here
+
+Run from `~/projects/navilan/research/qwen36-metal`.
+
+```
+Re-ground from disk before anything else; the previous session ended badly and
+your context is empty. Read GOAL.md in full, then RESUME.md, then the tail of
+LEDGER.md. GOAL.md holds the rules and the fixed truth, RESUME.md holds where
+things actually stand, LEDGER.md is the evidence. Act on those, not on anything
+you infer.
+
+Then take stock of what the last session left running: `bash bench/lock.sh
+status`, `pgrep -fl llama-`, `git status`, and `git -C llama.cpp worktree list`.
+There are ten open worktrees and the main checkout sits on `sgmv-q4k`, not
+`trunk`. Triage them — finish, land, or close each one, and say which in
+RESUME.md. Resume in-flight work before starting anything new; the failure mode
+here is starting an eleventh thing while ten sit half-finished.
+
+Then: **40 tok/s decode.** The goal does not move and you do not stop until the
+number is real. One invariant — the model's output stays indistinguishable from
+trunk's. Everything else is open: kernels, graph, scheduler, drafting mechanism,
+the engine itself, my machine's configuration. There is no part of this system
+you are not allowed to replace.
+
+You are the lead researcher. I am not going to tell you where the time is or
+which lead to chase; you have the ledger, the profile, and sixty-odd measurements
+of ground truth, and you are better placed than I am to judge. Set the direction.
+
+Recompute what 40 requires from the cost identity in GOAL.md before you plan,
+because the answer moves every time the stack does. Verify cost and acceptance
+both have to move — a plan attacking only one of them cannot reach the target
+however well it measures locally.
+
+When a line closes, close it with a measurement and open another. A wall is
+usually a term you have been treating as constant; some are frozen for good
+reasons and some because nobody asked, and telling those apart is the research.
+Go wide for ideas — papers, other runtimes, other fields — and combine them; most
+of what is left will come from two known ideas meeting rather than one new one
+arriving. Invent what nobody has published. You have a rig that falsifies an idea
+in an hour and a quality oracle that stops a wrong one from being believed, which
+is the argument for trying things that would be reckless without it.
+
+The discipline is unchanged and it is what makes this safe to run unattended:
+predict before you measure, a fresh-context critic measures every candidate and
+only its numbers count, failures go in the ledger. 40 ends the run, so it is the
+number most likely to be manufactured — end-to-end on trunk, quality clean,
+reproduced. A manufactured 40 is the one outcome worse than not getting there.
+
+When the machine is busy, `bash bench/wait-for-env.sh` and then drain unmeasured
+work. Never stop. Commit and push constantly.
+```
+
+---
+
 ## /goal — 40 (current)
 
 ```
