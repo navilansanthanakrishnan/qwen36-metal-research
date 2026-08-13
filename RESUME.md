@@ -91,10 +91,25 @@ effect counted twice — the gate is +1.5% at both p_min settings and p_min is
 +4.2% at both gate settings, no interaction. Concentrated in prose-02 (+25.1%),
 prose-01 (+7.2%), longctx (+7.0%).
 
-**Both still need a fresh-context critic and `bench/quality.sh` before they are
-KEEPs outright.** `p_min` cannot change output (the target verifies every draft
-token) but the gate is Class B — it changes which kernel instantiation runs.
-`test-backend-ops` MUL_MAT q4_K is 3/3.
+**Both still need a fresh-context critic before they are KEEPs outright.**
+`p_min` cannot change output (the target verifies every draft token) but the
+gate is Class B — it changes which kernel instantiation runs. `test-backend-ops`
+MUL_MAT q4_K is 3/3.
+
+**`bench/quality.sh` is BLIND to both of these — do not run it and call them
+verified.** Greedy generation is ne11=1 and the frozen perplexity slice runs at
+ubatch 512; the sgmv gate fires only at ne11=3 and narrow-tensor only at
+ne11>=9, so neither kernel is reachable from that gate and it would pass with
+the feature on and off. This is exactly the failure mode GOAL names. The correct
+Class B check is a **token-exactness diff under speculation**, where the widths
+actually occur: same server config, `GGML_METAL_SGMV_NMIN` 4 vs 3, 14 frozen
+prompts at temperature 0, diff the completions, and trace any divergence to a
+near-tie below the NOISE.md threshold.
+
+**That check was launched and had not finished when the session ended.** The
+script is `scratchpad/qual.sh` (reproduced in the ledger discussion); outputs
+land as `gen_nmin4.json` / `gen_nmin3.json` with the verdict in `qual.log`.
+Re-run it before treating LEDGER 087 as verified.
 
 ## READ NEXT — the bound, and the only live lead (LEDGER 084/085/086)
 
