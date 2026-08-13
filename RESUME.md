@@ -165,6 +165,15 @@ multi-layer, trained on the target's own output distribution. That is a training
 task, not a kernel task, and the invariant permits it because the target
 verifies every token.
 
+**This machine CAN do it — I checked, after wrongly claiming otherwise (093).**
+pypi reachable, pip present, 263 GiB free, MPS GPU available, sudo available.
+The only gap is that torch ships no wheels for Python 3.14 and 3.14 is the only
+interpreter installed, so step 0 is installing 3.12 or 3.13. Data generation is
+cheap: `llama.cpp` already emits the hidden states, and at the measured 306 tok/s
+prefill a 1M-token corpus is ~55 min and ~20 GB. The long pole is training to
+>= 0.84 sustained acceptance, then GGUF conversion and adding the arch to
+llama.cpp's graph code. Multi-session, and the only remaining route to 40.
+
 ## READ NEXT — the bound, and the only live lead (LEDGER 084/085/086)
 
 **082's plan was falsified by 084 — do not build a column-exact scalar kernel.**
