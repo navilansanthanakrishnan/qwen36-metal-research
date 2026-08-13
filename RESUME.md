@@ -73,7 +73,46 @@ today's acceptance** — so 40 is NOT acceptance-bound. It is cost slack:
 **What 40 needs, concretely:** cycle 137 -> ~125 ms (D=3 at the draft floor) and
 acc/fwd -> **~5.0**. Both terms move, as GOAL requires.
 
-## NEXT — tree drafting at width 8
+## NEXT — a scalar 4-column mat-vec. NOT trees, NOT wider verify.
+
+**Tree drafting is dead (080) and wider verify is dead (079/082). The direction
+is a NARROWER, cheaper verify.** Read LEDGER 080-083 before doing anything.
+
+`sgmv` computes a fixed 8-wide simdgroup fragment at every width and masks the
+store, so W=4 costs the same ~109 ms as W=8. Against my cost model
+`max(61, 8.96*W + 23) * 1.17`, sgmv at W=8 measures 108.6-111.3 against an ideal
+110.8 — **it is already ~99% optimal for eight columns.** The waste is running
+eight columns to verify four.
+
+An ideal kernel doing only the columns it needs is **flat at 71.4 ms out to
+W=4**, because the arithmetic does not exceed the 61 ms weight stream until
+W ~ 4.2. That 39 ms is 28% of the cycle. Projected mean over the six frozen
+categories: **25.9 -> 35.5 tok/s**, or **38.8** with drafting at its floor
+(codeedit 47.0, json 47.2, longctx 29.4 from 16.7).
+
+Neither existing kernel can do it:
+- `kernel_mul_mv_q4_K_f32_impl` takes the column as `tgpig.y` and **re-streams
+  all 16.52 GB per column** — 94.0 ms at W=2, 134.9 at W=3.
+- `mul_mv_ext` reads them once but is 1.73x off, and an 18-point sweep of
+  `nxpsg` x `nsg` x `r1ptg` cannot fix it (083): best 122.7 ms, which is the
+  existing default. Structural, not a constant.
+
+**Build:** sgmv's structure — register-resident, weight stream read once, zero
+threadgroup traffic — with the 8x8 simdgroup MMA replaced by **scalar fma into
+4 accumulators**. Arithmetic drops 71.6 -> 35.8 ms and falls back under the
+61 ms stream, so the kernel becomes bandwidth-bound like `mul_mv` at width 1.
+Prototype in `bench/sgmv.metal` first; that loop iterates in seconds where a
+llama.cpp rebuild plus A/B is over half an hour.
+
+Watch the register budget: the width-1 kernel holds `yl[16]+yh[16]`, so four
+columns of that is 128 floats and will spill. Restructure to load weights once
+and stream 4 activations per k rather than holding whole column tiles — 067 and
+070 both died of register pressure in this kernel and this is the same trap.
+
+Then re-derive the best draft depth against the new curve. With verify flat to
+W=4 the optimum moves shallow (D=3-4), which is the opposite of today's D=7.
+
+## SUPERSEDED — tree drafting at width 8
 
 This is the one large piece the effort has identified repeatedly and never
 built, and 079 makes it much cheaper than 072 thought: **the 8 verify slots are
