@@ -83,6 +83,24 @@ Ranking file so far: `runs/frspec/rank-wikitrain.txt` (full 248320-id
 permutation, frequency-ranked prefix). Still unread from his stack: B-nr1,
 E-gdnfusion, N_R0_Q5_K_R1=2.
 
+**066 IS CONFIRMED BY THE ROOFLINE (068).** Width-8 column compute is 24.8 ms
+against a 61.0 ms weight-stream floor, so the extra columns should be almost
+free under overlap; T_ver(8)=110.1 is **1.81x its floor**. The gap is overlap
+and activation traffic, not column cost. Ladder at today's drafting/acceptance:
+T_ver(8) 95 -> 24.5 tok/s, 85 -> 26.2, 71.1 -> 29.1.
+
+Mechanisms still untried for the activation-traffic gap (NFRAG is ruled out by
+067, per type):
+  - Read src1 as F16 rather than F32. Halves activation BYTES with no register
+    cost. ggml's mul_mm already converts src1 to F16, so the precedent and the
+    conversion path both exist. This is a loads reduction, the category that has
+    won every time in this effort.
+  - Stage the src1 slice in threadgroup memory. All NSG simdgroups iterate the
+    SAME k-range and differ only in rows, so they read identical B -- one
+    cooperative load could serve four. Note this does NOT reintroduce mul_mm's
+    problem: mul_mm stages dequantized WEIGHTS (huge); this stages ACTIVATIONS
+    (8 KB per super-block).
+
 **BIGGEST LEVER (LEDGER 066): the kernel's per-byte level, not its flatness.**
 `mul_mv` at width 1 = 232 GB/s; our kernel at widths 4-8 = 150 GB/s model-wide.
 Flat, but from a 35% worse baseline, and that gap is the entire 39 ms between
