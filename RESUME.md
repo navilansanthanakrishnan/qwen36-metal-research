@@ -3,6 +3,20 @@
 Working state for picking this up in a fresh context window. Overwrite freely —
 unlike LEDGER.md, this file is scratch.
 
+## STATUS 2026-08-13: ~22.8 tok/s steady-state (23.49 six-pair mean), target 40
+
+**Wired limit is now raised (071)** -- `sudo sysctl iogpu.wired_limit_mb=20480`.
+Re-apply after any reboot before quoting absolute numbers; it collapsed
+paired-delta sd from 6.795 to 0.693 and swap from thousands of pages to ~20.
+
+**40 IS ACCEPTANCE-BOUND (072).** At acc/fwd 3.738 the cycle must be 93.5 ms and
+T_ver(8) alone is 110.1, so 40 is unreachable at today's acceptance even with
+drafting free. It needs acc/fwd 5.0-6.0. A chain draft of 4 caps acc/fwd at 5.
+**Tree drafting is the only mechanism that fills width 8 with candidates instead
+of one chain, and it is the piece this effort has identified repeatedly and
+never built.** Verify is closed for this kernel structure (067-070) and its full
+remaining headroom is worth only ~29 tok/s at unchanged acceptance.
+
 ## STATUS 2026-08-12 (final): ~22.3 tok/s steady-state, target 30 — NOT reached
 
 LEDGER 064: six-pair mean **23.0101** with the cold first pair, **~22.3
