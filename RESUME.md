@@ -341,3 +341,36 @@ Ordered:
 
 `--spec-type draft-mtp --spec-draft-n-max 7`, `LLAMA_ARG_SPEC_MTP_MAX=4`,
 `LLAMA_ARG_SPEC_EXT_N=3`, `LLAMA_ARG_SPEC_N_RS_SEQ=3`, ctx 4096.
+
+## STEP 1 SCAFFOLDING — verified against the tree, so it is pure typing
+
+    tools/eagle-dump/CMakeLists.txt     # copy tools/cli's executable stanza:
+        set(TARGET llama-eagle-dump)
+        add_executable(${TARGET} dump.cpp)
+        target_link_libraries(${TARGET} PRIVATE llama-common ${CMAKE_THREAD_LIBS_INIT})
+        target_compile_features(${TARGET} PRIVATE cxx_std_17)
+    tools/CMakeLists.txt                # add_subdirectory(eagle-dump), near line 17-23
+
+`dump.cpp` takes the ordinary `common_params` / `common_init_from_params` path
+that every tool uses, then per ubatch:
+
+    llama_set_embeddings_nextn(ctx, /*value=*/true, /*masked=*/false);
+    common_batch_clear(batch);
+    // logits = true on EVERY position, or the hidden state will not exist there
+    for (...) common_batch_add(batch, tok, pos, {0}, /*logits=*/true);
+    llama_decode(ctx, batch);
+    for (int i = 0; i < batch.n_tokens; ++i) {
+        const float * h = llama_get_embeddings_nextn_ith(ctx, i);  // n_embd = 5120
+        // pair h with the token at position i+1 and append to the shard
+    }
+
+Include `"../src/llama-ext.h"` for those two calls — they are `LLAMA_API` but
+declared in that staging header, not `include/llama.h`.
+
+Write **f16, not f32**: 1M tokens is then ~10 GB rather than 20, and the head
+trains in half precision anyway. Output to
+`~/projects/assets/runs/qwen36-metal/eagle/`, never into the source tree.
+
+Deliberately not written this session: I did not have the context left to
+compile and debug it, and untested API-heavy C++ in the tree is worse than a
+complete spec.
