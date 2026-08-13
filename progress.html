@@ -45,15 +45,15 @@
 <div class="wrap">
 
 <h1>Qwen3.6-27B-Q4_K_M &middot; Metal decode optimisation</h1>
-<p class="sub">Apple M5 Pro, 16 GPU cores, 24 GiB &middot; ctx 4096, quant untouched &middot; updated 2026-08-12</p>
+<p class="sub">Apple M5 Pro, 16 GPU cores, 24 GiB &middot; ctx 4096, quant untouched &middot; updated 2026-08-13</p>
 
 <h2>Where the number is</h2>
 <div class="grid">
-  <div class="card"><div class="k">now</div><div class="v">22.3</div><div class="n">tok/s steady-state &middot; LEDGER 064</div></div>
+  <div class="card"><div class="k">now</div><div class="v">27.0</div><div class="n">tok/s &plusmn;0.5, 6-category mean &middot; LEDGER 088/089</div></div>
   <div class="card"><div class="k">baseline</div><div class="v">14.567</div><div class="n">tok/s &plusmn; 0.404 (n=10)</div></div>
-  <div class="card"><div class="k">target</div><div class="v">35.00</div><div class="n">not reached &mdash; 1.47&times; to go</div>
+  <div class="card"><div class="k">target</div><div class="v">40.00</div><div class="n">not reached &mdash; 1.48&times; to go</div>
     <div class="bar"><i style="width:68%"></i></div></div>
-  <div class="card"><div class="k">gain so far</div><div class="v">1.53&times;</div><div class="n">over frozen baseline</div></div>
+  <div class="card"><div class="k">gain so far</div><div class="v">1.85&times;</div><div class="n">over frozen baseline</div></div>
   <div class="card"><div class="k">1 tok/pass ceiling</div><div class="v">16.40</div><div class="n">270.8 GB/s &divide; 16.52 GB</div></div>
   <div class="card"><div class="k">min detectable effect</div><div class="v">3.0%</div><div class="n">KEEP threshold</div></div>
 </div>
@@ -110,17 +110,23 @@ Verify cost has stopped growing with draft depth.</p>
 Acceptance is reported beside every speculative number so a kernel win cannot be confused with a drafting win.</p>
 
 <h2>The cost model, and what it demands</h2>
-<p class="mono">cycle = T_ver + drafting = 114.4 + 46.1 = 160.5 ms &nbsp;(mean_acc/fwd 3.814)</p>
-<p>Solved from the depth-4 and depth-7 measurements; it predicts depth 5 within 3%. 35 tok/s at depth 4
-needs a <strong>94.1 ms cycle</strong>. Drafting is only 44.5 ms of the current 166.9 &mdash; so
-<strong>making drafting entirely free would still not be enough</strong>, because T_ver alone exceeds the
-whole budget. Two things must both happen:</p>
+<p class="mono">cycle = T_ver(W) + D &times; t_draft &nbsp;&middot;&nbsp; tok/s = acc_per_fwd / cycle</p>
+<p class="mono">= 110 + 4 &times; 6.7 = 137 ms &nbsp;(acc/fwd 3.70)</p>
+<p>Measured per prompt from server timings, not inherited. The cycle is remarkably <strong>constant across
+categories</strong> &mdash; 138.8 to 145.2 ms while tok/s spans 16.8 to 38.1 &mdash; so
+<code>tok/s &asymp; acc/fwd &times; 7.1</code>, and the whole per-category spread is acceptance.</p>
 <ol>
-<li><strong>T_ver 122 &rarr; ~90 ms.</strong> The standalone probe runs this kernel at 170 GB/s against a
-    212.9 GB/s loads-only ceiling measured for its own access pattern, so ~25% remains inside the kernel.</li>
-<li><strong>mean_acc/fwd 3.65 &rarr; ~4.7.</strong> Depth cannot supply it: each extra draft step buys about
-    0.12 accepted tokens and costs 8.9 ms.</li>
+<li><strong>T_ver(4..8) &asymp; 110 ms is a floor, not slack.</strong> The kernel computes a fixed 8-wide
+    simdgroup fragment at every width and is already ~99% of the 8-column ideal. A column-exact scalar
+    kernel was built to beat it and measured 3.4&times; worse (LEDGER 084): one MMA retires 512 MACs where a
+    scalar fma retires 32 per simdgroup.</li>
+<li><strong>So the target is acceptance-bound, and the requirement is exact.</strong> Solving the identity
+    for any drafter: per-step acceptance <strong>0.929</strong> at MTP&rsquo;s cost, 0.866 at 2.5 ms/step,
+    <strong>0.839 even with a free drafter</strong>. MTP measures 0.79 &rarr; 0.62 &rarr; 0.40.</li>
 </ol>
+<p>Every cheaper mechanism is closed by measurement: trees (080), depth (041), FR-Spec (061), the tensor
+path at verify widths (078), column-exact verify (084), independent draft models (092). What clears the bar
+is an EAGLE-3-class head &mdash; hidden-state-conditioned, trained on the target&rsquo;s own output.</p>
 
 <div class="note">
 <strong>Tree drafting is the lever the flat kernel actually unlocked.</strong> Verify at width 8 now costs what
