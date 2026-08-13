@@ -83,7 +83,22 @@ Ranking file so far: `runs/frspec/rank-wikitrain.txt` (full 248320-id
 permutation, frequency-ranked prefix). Still unread from his stack: B-nr1,
 E-gdnfusion, N_R0_Q5_K_R1=2.
 
-**THE DRAFT STEP IS THE TARGET: 11.5 ms x 5 = 57.5 ms of a 167.6 ms cycle.**
+**BIGGEST LEVER (LEDGER 066): the kernel's per-byte level, not its flatness.**
+`mul_mv` at width 1 = 232 GB/s; our kernel at widths 4-8 = 150 GB/s model-wide.
+Flat, but from a 35% worse baseline, and that gap is the entire 39 ms between
+T_ver(1)=71.1 and T_ver(8)=110.1. **Closing it fully would give 29.1 tok/s with
+no change to drafting or acceptance.** Cause is activation-read traffic (838 MB
+of B against 112 MB of weights at M=40960, per 038).
+
+NEXT, in order:
+  1. NFRAG=2 for Q6_K and Q5_K (32.6% of weight bytes, still at one fragment).
+     Q4_K's NFRAG=2 was +3.9%; these should behave the same way.
+  2. Then NFRAG=4 for Q6_K only -- shrey found Q6_K has the register room
+     because it reads its int8 scales inline, where Q4_K/Q5_K hoist four scales
+     into 8*nr0 registers and have none spare.
+  3. Re-measure T_ver(8) after each; the target is 110.1 -> ~85 ms.
+
+Old note: **THE DRAFT STEP IS THE TARGET: 11.5 ms x 5 = 57.5 ms of a 167.6 ms cycle.**
 30 tok/s needs the cycle at 124.6 ms, so 43 ms must come out and drafting holds
 57.5 of it. 065 ruled out the output head's *shape* as the cause (the probe hits
 170.9 GB/s on 248320x5120, same as every other shape), so the excess is the
