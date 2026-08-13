@@ -187,9 +187,18 @@ Reverses with `rm -rf .venv-train` and `brew uninstall python@3.12`. Does not
 touch the GPU or the frozen measurement surface, so the baseline stands.
 
 **Step 1 — training data.** For each corpus position t: the target's last-layer
-hidden state `h_t` and the token at t+1. **`h_t` is already exposed** — it is
-exactly what `llama_get_embeddings_nextn()` hands the MTP head
-(`common/speculative.cpp`), so no new forward path is needed, only a dump tool.
+hidden state `h_t` and the token at t+1. **`h_t` is already exposed and the API
+is verified** — no new forward path is needed, only a dump tool:
+
+    #include "../src/llama-ext.h"   // exactly what common/speculative.cpp:12 does
+    llama_set_embeddings_nextn(ctx, /*value=*/true, /*masked=*/false);
+    const float * h = llama_get_embeddings_nextn_ith(ctx, i);   // n_embd = 5120
+
+Both are `LLAMA_API` (exported) but declared in `src/llama-ext.h`, a **staging
+header, not the public `include/llama.h`** — so the tool must live inside the
+llama.cpp tree (put it in `tools/`, like the other consumers) rather than link
+as an external project. That is the one thing that would otherwise cost a build
+to discover.
 At the measured 306 tok/s prefill, 1M tokens is ~55 min and ~20 GB of f32; write
 to `~/projects/assets/runs/qwen36-metal/eagle/`, never into the source tree.
 Corpus: `runs/corpus/wikitext-2-raw` exists, but 061 is the warning — a ranking
