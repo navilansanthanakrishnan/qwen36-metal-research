@@ -3,30 +3,57 @@
 Working state for picking this up in a fresh context window. Scratch — overwrite
 freely. `LEDGER.md` is the evidence and is append-only; this file is not.
 
-## STATUS 2026-08-13 (late) — 30.41 on 6 prompts, VERIFICATION IN FLIGHT
+## STATUS 2026-08-14 — ~29.4 tok/s steady-state, target 30, NOT reached
 
-Target moved to **30**. Two findings this session took ~27 -> **30.41** (6-prompt
-mean), both from re-opening things this project had written off:
+Was 22.8 steady-state at LEDGER 071, so **+29% this session**. The frozen tool's
+6-pair means across today's runs: **29.43, 29.47, 29.86, 29.99**. Steady-state
+excluding each run's cold first pair is **~29.4**.
 
-1. **Merging `frspec-test` is worth +10.4% by itself (096).** It carries B-nr1
-   (multi-column mat-vec for nr1=2,3,4 on Q4_K/Q5_K/Q6_K) and E-gdnfusion, which
-   RESUME listed as "still unread from his stack" since 056 — unmerged for the
-   whole effort while four kernel mechanisms were invented and rejected from
-   scratch. Same config, acc/fwd identical at 3.704, cycle 138.2 -> 125.1 ms.
-   **Not yet isolated which of the two does it.**
-2. **FR-Spec is free at N=131072 (097).** 30.41 vs 29.61 no-trim, acc/fwd
-   unchanged to three decimals. 061 closed this line having only tested
-   N <= 32768 of a 248320 vocabulary; its N=32768 number reproduces exactly
-   (2.921 here vs its 2.852-3.043), so the measurement was right and only the
-   generalisation was wrong. Curve: 32768 -> 21.34, 65536 -> 28.49,
-   **131072 -> 30.41**, none -> 29.61. Coverage breaks between 65536 and 131072.
+**Do not quote a single run as the level.** Pair 1 of every specab reads 1-3
+tok/s high (LEDGER 064's cold-cache artifact). Today that artifact produced
+headline readings of 30.41, 29.99 and 31.3 that all evaporated on repeat — see
+LEDGER 099, which is the correction of my own claim.
 
-**NOT yet a result.** Needs the full 14-prompt frozen set, a reproduction at a
-second thermal state, and quality. That run is in flight; results land in
-`scratchpad/verify.log` (arms trimA / notrim / trimB plus a token-exactness diff).
+### Best configuration
 
-Run it as: `LLAMA_MTP_VOCAB_N=131072 LLAMA_MTP_VOCAB_FILE=runs/frspec/rank-mixed.txt`
-on top of the best config below.
+    GGML_METAL_SGMV_NMIN=3
+    LLAMA_MTP_VOCAB_N=98304                      # 105: the optimum, NOT 131072
+    LLAMA_MTP_VOCAB_FILE=runs/frspec/rank-mixed.txt
+    LLAMA_ARG_SPEC_MTP_MAX=4  LLAMA_ARG_SPEC_EXT_N=3  LLAMA_ARG_SPEC_N_RS_SEQ=3
+    --spec-draft-n-max 7 --spec-draft-n-min 0 --spec-type draft-mtp
+    ctx 4096, b/ub 512, fa on, KV f16
+
+### What this session established
+
+1. **Shrey's unread stack is worth +10.4% on its own (096).** `frspec-test`
+   carries B-nr1 and E-gdnfusion, listed in RESUME as "still unread" since 056
+   and never merged, while four kernel mechanisms were invented and rejected
+   from scratch (067, 069, 070, 084). Merged: same config, acc/fwd identical,
+   cycle 138.2 -> 125.1 ms.
+2. **FR-Spec was closed against an N 4x too small (095/097/101/105).** 061
+   declared it closed having tested only N <= 32768 of a 248320 vocabulary. Its
+   own evidence contradicted itself — 100% coverage AND a 26% acceptance loss —
+   and the resolution is that the coverage was measured on the ranking corpus,
+   not the benchmark. **Verified KEEP: +6.93%, p=0.0312, VERDICT DIFFERENT.**
+   Bisecting: 98304 is the optimum (acc/fwd identical, +1.6% over 131072);
+   73728 starts losing acceptance. Curve: 32768 -> 21.3, 65536 -> 28.5,
+   73728 -> acc/fwd 3.710, **98304 -> acc/fwd 3.744**, 131072 -> 3.744.
+
+### THE OPEN ITEM — worth ~4%, untested on the final stack
+
+**`bench/specab.sh` never passes `--spec-draft-p-min`**, so every specab number
+in LEDGER 101-106 was measured at **p_min = 0**, the llama.cpp default. Separate
+6-prompt sweeps (086) measured **p_min 0.4 as ~4% better than 0**. Set it via
+`LLAMA_ARG_SPEC_DRAFT_P_MIN` in the arm env — the flag has an env binding, so it
+works inside specab without editing the frozen script.
+
+That run was launched and interrupted before its verdict. Its partial arms read
+**31.2-32.0 tok/s on both sides**, which is the highest this rig has produced —
+but two arms of one run is not a level, and the swap counters were 483-7484
+pages, so it needs a clean repeat before it means anything.
+
+If p_min is worth what 086 measured, the level lands at ~30.5 and the target is
+met; if it is worth nothing here, ~29.4 stands.
 
 ## Superseded status line — ~27 ± 0.5 tok/s
 

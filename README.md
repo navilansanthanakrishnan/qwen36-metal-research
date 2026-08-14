@@ -4,13 +4,18 @@ The research half of an effort to make one model decode faster on one machine:
 **Qwen3.6-27B-Q4_K_M** on a binned **M5 Pro** — 16 GPU cores, 24 GiB unified
 memory. Context stays at 4096 and the quantization is never changed.
 
-Decode went from **14.567 tok/s to ~27 tok/s (1.85×)**, measured as the mean over
-the frozen prompt set. The target is **40** and has not been reached;
-[LEDGER.md](LEDGER.md) records why, entry by entry, including the failures — and
-the failures are most of it.
+Decode went from **14.567 tok/s to ~29.4 tok/s (2.0×)**, measured by the frozen
+interleaved A/B tool as the steady-state mean over the frozen prompt set. The
+current target is **30** and has not been reached; [LEDGER.md](LEDGER.md) records
+why, entry by entry, including the failures — and the failures are most of it.
 
-The remaining gap is now a single falsifiable number rather than a direction:
-**40 requires a drafter with sustained per-step acceptance ≥ 0.84**, against the
+Two things got it there, and both were lines this project had already written
+off: a collaborator's kernel stack that sat unmerged for the whole effort
+(**+10.4%**, LEDGER 096), and a draft-vocabulary trim that had been closed
+against an N four times too small (**+6.93%, p=0.0312**, LEDGER 097/101/105).
+
+An earlier target of 40 was shown to reduce to one falsifiable number:
+**it requires a drafter with sustained per-step acceptance ≥ 0.84**, against the
 MTP head's measured 0.79 → 0.62 → 0.40 (LEDGER 092).
 
 The kernels and llama.cpp changes live in the implementation repo:
@@ -22,7 +27,7 @@ evidence.
 
 | | before | after |
 |---|---|---|
-| decode, MTP speculative (6-category mean) | 14.567 tok/s | **~27 tok/s** |
+| decode, MTP speculative (frozen A/B, steady state) | 14.567 tok/s | **~29.4 tok/s** |
 | width-8 verification | 215.2 ms | **110 ms** |
 | width-3 verification | 129.5 ms | **107.4 ms** |
 | Q4_K mat-vec, m=4096 k=14336, n=8 | 510 µs | **229 µs** |

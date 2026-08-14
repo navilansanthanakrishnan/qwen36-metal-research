@@ -45,15 +45,15 @@
 <div class="wrap">
 
 <h1>Qwen3.6-27B-Q4_K_M &middot; Metal decode optimisation</h1>
-<p class="sub">Apple M5 Pro, 16 GPU cores, 24 GiB &middot; ctx 4096, quant untouched &middot; updated 2026-08-13</p>
+<p class="sub">Apple M5 Pro, 16 GPU cores, 24 GiB &middot; ctx 4096, quant untouched &middot; updated 2026-08-14</p>
 
 <h2>Where the number is</h2>
 <div class="grid">
-  <div class="card"><div class="k">now</div><div class="v">27.0</div><div class="n">tok/s &plusmn;0.5, 6-category mean &middot; LEDGER 088/089</div></div>
+  <div class="card"><div class="k">now</div><div class="v">29.4</div><div class="n">tok/s steady-state &middot; LEDGER 101/105</div></div>
   <div class="card"><div class="k">baseline</div><div class="v">14.567</div><div class="n">tok/s &plusmn; 0.404 (n=10)</div></div>
-  <div class="card"><div class="k">target</div><div class="v">40.00</div><div class="n">not reached &mdash; 1.48&times; to go</div>
+  <div class="card"><div class="k">target</div><div class="v">30.00</div><div class="n">not reached &mdash; 1.02&times; to go</div>
     <div class="bar"><i style="width:68%"></i></div></div>
-  <div class="card"><div class="k">gain so far</div><div class="v">1.85&times;</div><div class="n">over frozen baseline</div></div>
+  <div class="card"><div class="k">gain so far</div><div class="v">2.02&times;</div><div class="n">over frozen baseline</div></div>
   <div class="card"><div class="k">1 tok/pass ceiling</div><div class="v">16.40</div><div class="n">270.8 GB/s &divide; 16.52 GB</div></div>
   <div class="card"><div class="k">min detectable effect</div><div class="v">3.0%</div><div class="n">KEEP threshold</div></div>
 </div>
