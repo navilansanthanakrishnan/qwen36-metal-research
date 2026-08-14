@@ -3,7 +3,32 @@
 Working state for picking this up in a fresh context window. Scratch — overwrite
 freely. `LEDGER.md` is the evidence and is append-only; this file is not.
 
-## STATUS 2026-08-13 — ~27 ± 0.5 tok/s, target 40, NOT reached
+## STATUS 2026-08-13 (late) — 30.41 on 6 prompts, VERIFICATION IN FLIGHT
+
+Target moved to **30**. Two findings this session took ~27 -> **30.41** (6-prompt
+mean), both from re-opening things this project had written off:
+
+1. **Merging `frspec-test` is worth +10.4% by itself (096).** It carries B-nr1
+   (multi-column mat-vec for nr1=2,3,4 on Q4_K/Q5_K/Q6_K) and E-gdnfusion, which
+   RESUME listed as "still unread from his stack" since 056 — unmerged for the
+   whole effort while four kernel mechanisms were invented and rejected from
+   scratch. Same config, acc/fwd identical at 3.704, cycle 138.2 -> 125.1 ms.
+   **Not yet isolated which of the two does it.**
+2. **FR-Spec is free at N=131072 (097).** 30.41 vs 29.61 no-trim, acc/fwd
+   unchanged to three decimals. 061 closed this line having only tested
+   N <= 32768 of a 248320 vocabulary; its N=32768 number reproduces exactly
+   (2.921 here vs its 2.852-3.043), so the measurement was right and only the
+   generalisation was wrong. Curve: 32768 -> 21.34, 65536 -> 28.49,
+   **131072 -> 30.41**, none -> 29.61. Coverage breaks between 65536 and 131072.
+
+**NOT yet a result.** Needs the full 14-prompt frozen set, a reproduction at a
+second thermal state, and quality. That run is in flight; results land in
+`scratchpad/verify.log` (arms trimA / notrim / trimB plus a token-exactness diff).
+
+Run it as: `LLAMA_MTP_VOCAB_N=131072 LLAMA_MTP_VOCAB_FILE=runs/frspec/rank-mixed.txt`
+on top of the best config below.
+
+## Superseded status line — ~27 ± 0.5 tok/s
 
 Level was 25.93 at session start. The ±0.5 is real: the six-category mean has
 ~2.4% run-to-run spread (089), so **paired A/B deltas are quotable and absolute
