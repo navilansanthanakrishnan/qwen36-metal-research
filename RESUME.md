@@ -164,6 +164,17 @@ code. `--spec-type draft-mtp` already supports chained heads (`chain_heads`,
 
 ## Do not re-derive
 
+- **`ps -o etime` is `[[dd-]hh:]mm:ss`, so "03:29" is 3m29s, not 3h29m.** This
+  cost a killed `specab` run: I read a 3-minute-old process as 3.5 hours old,
+  concluded 6 pairs would take 40 hours, and killed the correct measurement.
+  Cross-check elapsed time against `date` and the log file's creation time
+  before concluding anything is slow.
+- **Long `sleep`s in a backgrounded agent shell do not reliably sleep.** Poll
+  with `until <condition>; do sleep 60; done` instead; a bare `sleep 3000`
+  returned in seconds here and made a running job look stalled.
+- **Model load is ~2 s once the page cache is warm**, not minutes — so a slow
+  arm is never the load. If an arm looks slow, the cause is elsewhere.
+
 - **`bench/env.sh` must be run with `bash`, never sourced from an agent shell.**
   That shell is zsh, where `BASH_SOURCE` is unset, so `dirname ""` resolves to the
   parent and every `QM_*` path comes out wrong. The frozen scripts are fine.
